@@ -1248,7 +1248,8 @@
       .content-notes .notes-code-block, .content-notes .notes-table, .content-notes .notes-box, .content-notes .notes-diagram { margin: 12px 0; }
       [data-theme="dark"] .content-notes tr:nth-child(even) { background: rgba(255,255,255,0.03); }
     </style>
-  </head>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
   <body></body>
 </html>
 
@@ -5500,6 +5501,11 @@ Before 2012, ILSVRC winners used traditional hand-crafted feature engineering (e
 </div><!-- end view-notes -->
 
 <script>
+// ── Render markdown notes ───────────────────────────────────────
+document.querySelectorAll('.content-notes').forEach(function(el) {
+  marked.setOptions({ gfm: true, breaks: true });
+  el.innerHTML = marked.parse(el.textContent || el.innerText);
+});
 // ── Theme ──────────────────────────────────────────────────────
 let theme = localStorage.getItem('cd-theme') || 'light';
 function applyTheme(t){
