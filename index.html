@@ -1,0 +1,3018 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Compiler Design — RGPV Sixth Sem</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ===== TOKENS ===== */
+      :root {
+        --bg: #fafaf8;
+        --bg-elevated: #ffffff;
+        --text: #1b1b18;
+        --text-muted: #6b6b65;
+        --border: #e4e2dc;
+        --accent: #0f766e;
+        --accent-soft: #e3f1ee;
+        --code-bg: #f1efe8;
+        --shadow: 0 1px 2px rgba(20, 20, 15, 0.04);
+        --radius: 3px;
+      }
+      [data-theme="dark"] {
+        --bg: #15161a;
+        --bg-elevated: #1b1d22;
+        --text: #e9e8e3;
+        --text-muted: #8d8d86;
+        --border: #2b2d33;
+        --accent: #2dd4bf;
+        --accent-soft: #163330;
+        --code-bg: #202227;
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Inter", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        transition:
+          background 0.25s,
+          color 0.25s;
+      }
+      ::selection {
+        background: var(--accent-soft);
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .mono {
+        font-family: "JetBrains Mono", monospace;
+      }
+
+      /* ===== VIEWS ===== */
+      .view {
+        display: none;
+      }
+      .view.active {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      /* ===== LANDING NAVBAR ===== */
+      .land-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 48px;
+        height: 60px;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg-elevated);
+        position: sticky;
+        top: 0;
+        z-index: 50;
+      }
+      .land-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .land-brand-mark {
+        width: 28px;
+        height: 28px;
+        border: 1.5px solid var(--accent);
+        border-radius: var(--radius);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .land-brand-text {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        line-height: 1.3;
+      }
+      .land-nav-links {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .land-nav-tab {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 14px;
+        border-radius: var(--radius);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--text-muted);
+        cursor: pointer;
+        border: 1px solid transparent;
+        background: none;
+        transition: all 0.15s;
+      }
+      .land-nav-tab:hover {
+        color: var(--text);
+        border-color: var(--border);
+      }
+      .land-nav-tab.active-tab {
+        color: var(--accent);
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+      .land-nav-tab svg {
+        width: 13px;
+        height: 13px;
+        flex-shrink: 0;
+      }
+      .land-nav-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .theme-btn {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        color: var(--text-muted);
+        padding: 6px 10px;
+        cursor: pointer;
+        font-family: "Inter", sans-serif;
+        font-size: 12px;
+        transition:
+          border-color 0.15s,
+          color 0.15s;
+      }
+      .theme-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .theme-btn svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      /* ===== LANDING HERO ===== */
+      .land-body {
+        flex: 1;
+        padding: 72px 48px 80px;
+        max-width: 900px;
+        margin: 0 auto;
+        width: 100%;
+      }
+      .land-eyebrow {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11.5px;
+        color: var(--accent);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+      }
+      .land-title {
+        font-size: 48px;
+        line-height: 1.12;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 0 0 20px;
+      }
+      .land-desc {
+        font-size: 16px;
+        line-height: 1.75;
+        color: var(--text-muted);
+        max-width: 580px;
+        margin-bottom: 56px;
+      }
+
+      /* section cards */
+      .land-cards {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1px;
+        background: var(--border);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+      .land-card {
+        background: var(--bg-elevated);
+        padding: 32px 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .land-card-tag {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--accent);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .land-card-title {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        margin: 0;
+      }
+      .land-card-desc {
+        font-size: 14px;
+        line-height: 1.65;
+        color: var(--text-muted);
+        margin: 0;
+        flex: 1;
+      }
+      .land-card-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .meta-chip {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        color: var(--text-muted);
+        background: var(--code-bg);
+        padding: 3px 8px;
+        border-radius: var(--radius);
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        align-self: flex-start;
+        background: var(--accent);
+        color: var(--bg-elevated);
+        border: none;
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 600;
+        font-size: 13px;
+        padding: 11px 20px;
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition:
+          transform 0.15s,
+          opacity 0.15s;
+      }
+      .cta:hover {
+        transform: translateX(2px);
+        opacity: 0.92;
+      }
+      .cta.outline {
+        background: none;
+        color: var(--accent);
+        border: 1.5px solid var(--accent);
+      }
+      .cta.outline:hover {
+        background: var(--accent-soft);
+        transform: translateX(2px);
+      }
+
+      /* pipeline strip */
+      .land-pipeline {
+        display: flex;
+        gap: 0;
+        margin-top: 56px;
+        flex-wrap: wrap;
+        border-top: 1px solid var(--border);
+        padding-top: 28px;
+      }
+      .land-pipeline .stage {
+        flex: 1;
+        min-width: 120px;
+        padding: 4px 14px 4px 14px;
+        border-left: 1px solid var(--border);
+        margin-left: -1px;
+      }
+      .land-pipeline .stage:first-child {
+        border-left: none;
+        padding-left: 0;
+        margin-left: 0;
+      }
+      .stage-num {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        color: var(--accent);
+        margin-bottom: 6px;
+      }
+      .stage-name {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .stage-desc {
+        font-size: 11.5px;
+        color: var(--text-muted);
+        line-height: 1.4;
+      }
+
+      /* ===== APP LAYOUT (PYQ / NOTES) ===== */
+      .app-view {
+        display: none;
+        flex: 1;
+      }
+      .app-view.active {
+        display: flex;
+      }
+
+      /* top navbar for app views */
+      .app-topnav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 0 0 0;
+        height: 60px;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg-elevated);
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        flex-shrink: 0;
+      }
+      .app-topnav-left {
+        display: flex;
+        align-items: center;
+        height: 100%;
+      }
+      .back-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 100%;
+        padding: 0 20px;
+        border-right: 1px solid var(--border);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        cursor: pointer;
+        background: none;
+        border-top: none;
+        border-bottom: none;
+        border-left: none;
+        transition: color 0.15s;
+        white-space: nowrap;
+      }
+      .back-btn:hover {
+        color: var(--accent);
+      }
+      .back-btn svg {
+        width: 14px;
+        height: 14px;
+      }
+      .app-nav-tabs {
+        display: flex;
+        align-items: center;
+        height: 100%;
+        padding: 0 16px;
+        gap: 4px;
+      }
+      .app-nav-tab {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: var(--radius);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        cursor: pointer;
+        border: 1px solid transparent;
+        background: none;
+        transition: all 0.15s;
+      }
+      .app-nav-tab:hover {
+        color: var(--text);
+        border-color: var(--border);
+      }
+      .app-nav-tab.active-tab {
+        color: var(--accent);
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+      .app-nav-tab svg {
+        width: 12px;
+        height: 12px;
+      }
+      .app-topnav-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 16px;
+      }
+
+      /* ===== SIDEBAR ===== */
+      .sidebar {
+        width: 264px;
+        flex-shrink: 0;
+        border-right: 1px solid var(--border);
+        background: var(--bg-elevated);
+        display: flex;
+        flex-direction: column;
+        padding: 28px 20px;
+        transition:
+          width 0.22s,
+          padding 0.22s;
+        position: sticky;
+        top: 60px;
+        height: calc(100vh - 60px);
+        overflow: hidden;
+      }
+      .sidebar.collapsed {
+        width: 68px;
+        padding: 28px 12px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 34px;
+        white-space: nowrap;
+      }
+      .brand-mark {
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+        border: 1.5px solid var(--accent);
+        border-radius: var(--radius);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .brand-text {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        line-height: 1.3;
+        transition: opacity 0.15s;
+      }
+      .sidebar.collapsed .brand-text {
+        display: none;
+      }
+      .pipeline {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        position: relative;
+        flex: 1;
+      }
+      .pipeline::before {
+        content: "";
+        position: absolute;
+        left: 13px;
+        top: 14px;
+        bottom: 14px;
+        width: 1px;
+        background: var(--border);
+      }
+      .pipeline li {
+        position: relative;
+      }
+      .pipeline .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 11px 4px;
+        cursor: pointer;
+        color: var(--text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+      }
+      .nav-node {
+        width: 26px;
+        height: 26px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        border: 1.5px solid var(--border);
+        background: var(--bg-elevated);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-muted);
+        z-index: 1;
+        transition: all 0.18s;
+      }
+      .nav-item .nav-label {
+        font-size: 13.5px;
+        font-weight: 500;
+        transition: opacity 0.15s;
+      }
+      .nav-item .nav-sub {
+        display: block;
+        font-size: 11px;
+        color: var(--text-muted);
+        font-family: "JetBrains Mono", monospace;
+        margin-top: 1px;
+      }
+      .sidebar.collapsed .nav-label,
+      .sidebar.collapsed .nav-sub {
+        display: none;
+      }
+      .nav-item:hover .nav-node {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .nav-item.active .nav-node {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--bg-elevated);
+      }
+      .nav-item.active .nav-label {
+        color: var(--text);
+        font-weight: 600;
+      }
+      .nav-item.done .nav-node {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .sidebar-foot {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        border-top: 1px solid var(--border);
+        padding-top: 16px;
+      }
+      .icon-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: none;
+        border: 1px solid var(--border);
+        color: var(--text-muted);
+        padding: 8px 10px;
+        border-radius: var(--radius);
+        cursor: pointer;
+        font-family: "Inter", sans-serif;
+        font-size: 12.5px;
+        width: 100%;
+        transition:
+          border-color 0.15s,
+          color 0.15s;
+      }
+      .icon-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .icon-btn svg {
+        flex-shrink: 0;
+        width: 15px;
+        height: 15px;
+      }
+      .sidebar.collapsed .icon-btn span {
+        display: none;
+      }
+      .sidebar.collapsed .icon-btn {
+        justify-content: center;
+      }
+
+      /* ===== MAIN CONTENT ===== */
+      .main {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 48px;
+        border-bottom: 1px solid var(--border);
+      }
+      .topbar .crumb {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: var(--text-muted);
+        letter-spacing: 0.02em;
+      }
+      .topbar .crumb b {
+        color: var(--text);
+        font-weight: 600;
+      }
+      .content-wrap {
+        padding: 56px 48px 40px;
+        max-width: 760px;
+      }
+      .page {
+        display: none;
+      }
+      .page.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* ===== UNIT CONTENT ===== */
+      .home-eyebrow {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: var(--accent);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 18px;
+      }
+      .home-title {
+        font-size: 42px;
+        line-height: 1.15;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        margin: 0 0 20px;
+      }
+      .home-desc {
+        font-size: 16px;
+        line-height: 1.7;
+        color: var(--text-muted);
+        max-width: 560px;
+        margin-bottom: 32px;
+      }
+      .home-cta-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .home-pipeline {
+        display: flex;
+        gap: 0;
+        margin-top: 52px;
+        flex-wrap: wrap;
+        border-top: 1px solid var(--border);
+        padding-top: 28px;
+      }
+      .home-pipeline .stage {
+        flex: 1;
+        min-width: 130px;
+        padding: 4px 14px 4px 14px;
+        border-left: 1px solid var(--border);
+        margin-left: -1px;
+      }
+      .home-pipeline .stage:first-child {
+        border-left: none;
+        padding-left: 0;
+        margin-left: 0;
+      }
+      .unit-eyebrow {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 14px;
+      }
+      .unit-title {
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        margin: 0 0 12px;
+      }
+      .unit-intro {
+        font-size: 15px;
+        line-height: 1.7;
+        color: var(--text-muted);
+        margin-bottom: 34px;
+        max-width: 600px;
+      }
+      .stat-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        background: var(--border);
+        border: 1px solid var(--border);
+        margin-bottom: 40px;
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+      .stat {
+        background: var(--bg-elevated);
+        padding: 16px 18px;
+      }
+      .stat-val {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--accent);
+        margin-bottom: 4px;
+      }
+      .stat-label {
+        font-size: 11.5px;
+        color: var(--text-muted);
+        line-height: 1.3;
+      }
+      .topic {
+        margin-bottom: 36px;
+      }
+      .topic-title {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+      .topic-title::before {
+        content: "//";
+        color: var(--accent);
+      }
+      .qlist {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .qlist li {
+        font-size: 14px;
+        line-height: 1.6;
+        padding-left: 18px;
+        position: relative;
+      }
+      .qlist li::before {
+        content: "";
+        position: absolute;
+        left: 2px;
+        top: 9px;
+        width: 5px;
+        height: 5px;
+        background: var(--border);
+        border-radius: 50%;
+      }
+      .qlist li.repeat::before {
+        background: var(--accent);
+      }
+      .tag {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        color: var(--accent);
+        background: var(--accent-soft);
+        padding: 1px 6px;
+        border-radius: 3px;
+        margin-left: 6px;
+        white-space: nowrap;
+      }
+      .takeaway {
+        background: var(--code-bg);
+        border-left: 2px solid var(--accent);
+        padding: 16px 18px;
+        font-size: 13.5px;
+        line-height: 1.6;
+        color: var(--text-muted);
+        border-radius: 0 var(--radius) var(--radius) 0;
+        margin-top: 8px;
+      }
+      .takeaway b {
+        color: var(--text);
+      }
+
+      /* notes placeholder */
+      .notes-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 48px 0;
+      }
+      .notes-placeholder .np-tag {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        color: var(--accent);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .notes-placeholder h3 {
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .notes-placeholder p {
+        font-size: 14px;
+        line-height: 1.7;
+        color: var(--text-muted);
+        max-width: 480px;
+        margin: 0;
+      }
+      .notes-block {
+        background: var(--code-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+        margin-top: 8px;
+        width: 100%;
+      }
+      .notes-block-title {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--accent);
+        margin-bottom: 12px;
+      }
+      .notes-item {
+        font-size: 13.5px;
+        line-height: 1.8;
+        color: var(--text-muted);
+        padding-left: 16px;
+        position: relative;
+      }
+      .notes-item::before {
+        content: "—";
+        position: absolute;
+        left: 0;
+        color: var(--border);
+      }
+
+      /* pager */
+      .pager {
+        display: flex;
+        justify-content: space-between;
+        align-items: stretch;
+        gap: 14px;
+        margin-top: 56px;
+        border-top: 1px solid var(--border);
+        padding-top: 24px;
+      }
+      .pager-btn {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 12px 16px;
+        cursor: pointer;
+        text-align: left;
+        color: var(--text);
+        transition: border-color 0.15s;
+        max-width: 48%;
+      }
+      .pager-btn:hover {
+        border-color: var(--accent);
+      }
+      .pager-btn.next {
+        text-align: right;
+        align-items: flex-end;
+        margin-left: auto;
+      }
+      .pager-btn .pager-dir {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10.5px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .pager-btn .pager-name {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .pager-spacer {
+        flex: 1;
+      }
+
+      /* hamburger + overlay */
+      .hamburger {
+        display: none;
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 7px 9px;
+        cursor: pointer;
+        color: var(--text);
+        align-items: center;
+        justify-content: center;
+        transition:
+          border-color 0.15s,
+          color 0.15s;
+      }
+      .hamburger:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .hamburger svg {
+        display: block;
+      }
+      .overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.35);
+        z-index: 19;
+        backdrop-filter: blur(2px);
+      }
+      .overlay.active {
+        display: block;
+      }
+
+      /* ===== RESPONSIVE ===== */
+      @media (max-width: 760px) {
+        /* landing */
+        .land-nav {
+          padding: 0 16px;
+        }
+        .land-brand-text span {
+          display: none;
+        }
+        .land-body {
+          padding: 40px 16px 60px;
+        }
+        .land-title {
+          font-size: 28px;
+        }
+        .land-desc {
+          font-size: 15px;
+          margin-bottom: 36px;
+        }
+        .land-cards {
+          grid-template-columns: 1fr;
+        }
+        .land-pipeline {
+          flex-direction: column;
+        }
+        .land-pipeline .stage {
+          border-left: none;
+          padding-left: 0;
+          margin-left: 0;
+          border-top: 1px solid var(--border);
+          padding-top: 12px;
+          margin-top: 12px;
+        }
+        .land-pipeline .stage:first-child {
+          border-top: none;
+          padding-top: 0;
+          margin-top: 0;
+        }
+
+        /* app nav */
+        .app-topnav {
+          padding: 0;
+        }
+        .back-btn {
+          padding: 0 14px;
+          font-size: 11px;
+        }
+        .app-nav-tabs {
+          padding: 0 8px;
+        }
+        .app-topnav-right {
+          padding: 0 10px;
+        }
+
+        /* hamburger */
+        .hamburger {
+          display: flex;
+        }
+        .sidebar {
+          position: fixed;
+          z-index: 20;
+          left: 0;
+          top: 0;
+          height: 100vh;
+          width: 260px !important;
+          transform: translateX(-100%);
+          transition:
+            transform 0.25s,
+            box-shadow 0.25s;
+          box-shadow: none;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        .sidebar.open {
+          transform: translateX(0);
+          box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+        }
+        #collapseToggle {
+          display: none;
+        }
+        .main {
+          margin-left: 0;
+        }
+        .topbar {
+          padding: 14px 16px;
+          position: sticky;
+          top: 60px;
+          z-index: 10;
+          background: var(--bg);
+        }
+        .content-wrap {
+          padding: 28px 16px 48px;
+        }
+        .home-title {
+          font-size: 26px;
+          line-height: 1.2;
+        }
+        .home-desc {
+          font-size: 15px;
+        }
+        .unit-title {
+          font-size: 22px;
+        }
+        .unit-intro {
+          font-size: 14px;
+        }
+        .home-pipeline {
+          flex-direction: column;
+          gap: 0;
+          margin-top: 36px;
+        }
+        .home-pipeline .stage {
+          border-left: none;
+          padding-left: 0;
+          margin-left: 0;
+          border-top: 1px solid var(--border);
+          padding-top: 12px;
+          margin-top: 12px;
+        }
+        .home-pipeline .stage:first-child {
+          border-top: none;
+          padding-top: 0;
+          margin-top: 0;
+        }
+        .stat-row {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .stat-val {
+          font-size: 18px;
+        }
+        .qlist li {
+          font-size: 13.5px;
+        }
+        .takeaway {
+          font-size: 13px;
+          padding: 14px 15px;
+        }
+        .pager {
+          flex-direction: column;
+          gap: 10px;
+          margin-top: 40px;
+        }
+        .pager-btn {
+          max-width: 100%;
+        }
+        .pager-btn.next {
+          text-align: left;
+          align-items: flex-start;
+          margin-left: 0;
+        }
+        .nav-item {
+          padding: 13px 4px;
+        }
+        .icon-btn {
+          padding: 10px 10px;
+        }
+        .cta {
+          width: 100%;
+          justify-content: center;
+        }
+        .home-cta-row {
+          flex-direction: column;
+        }
+      }
+      @media (max-width: 380px) {
+        .home-title {
+          font-size: 22px;
+        }
+        .land-title {
+          font-size: 22px;
+        }
+        .unit-title {
+          font-size: 20px;
+        }
+        .stat-row {
+          grid-template-columns: 1fr;
+        }
+        .content-wrap {
+          padding: 22px 14px 40px;
+        }
+        .topbar {
+          padding: 12px 14px;
+        }
+      }
+      @media (min-width: 761px) and (max-width: 1024px) {
+        .sidebar {
+          width: 220px;
+        }
+        .content-wrap {
+          padding: 44px 32px 40px;
+        }
+        .topbar {
+          padding: 16px 32px;
+        }
+        .home-title {
+          font-size: 34px;
+        }
+        .land-body {
+          padding: 56px 32px 64px;
+        }
+      }
+      /* Custom Styles for Complete Notes */
+      .notes-code-block {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        line-height: 1.5;
+        background: var(--code-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 14px;
+        margin: 16px 0;
+        overflow-x: auto;
+        white-space: pre;
+      }
+      .notes-diagram {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        line-height: 1.4;
+        background: var(--bg);
+        border: 1.5px dashed var(--border);
+        border-radius: var(--radius);
+        padding: 16px;
+        margin: 16px 0;
+        overflow-x: auto;
+        color: var(--accent);
+        white-space: pre;
+      }
+      .notes-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .notes-table th, .notes-table td {
+        border: 1px solid var(--border);
+        padding: 10px 12px;
+        text-align: left;
+      }
+      .notes-table th {
+        background: var(--code-bg);
+        font-weight: 600;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+      }
+      .notes-table tr:nth-child(even) {
+        background: rgba(0,0,0,0.015);
+      }
+      [data-theme="dark"] .notes-table tr:nth-child(even) {
+        background: rgba(255,255,255,0.015);
+      }
+      .notes-box {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px;
+        margin: 16px 0;
+        background: var(--bg-elevated);
+      }
+      .notes-box.exam {
+        border-left: 4px solid var(--accent);
+      }
+      .notes-box.interview {
+        border-left: 4px solid #d97706;
+      }
+      .notes-box.tip {
+        border-left: 4px solid #2563eb;
+      }
+      .notes-box-title {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .notes-box-title.exam {
+        color: var(--accent);
+      }
+      .notes-box-title.interview {
+        color: #d97706;
+      }
+      .notes-box-title.tip {
+        color: #2563eb;
+      }
+    </style>
+  </head>
+  <body></body>
+</html>
+
+<div class="overlay" id="overlay"></div>
+
+<!-- ============================================================ -->
+<!-- LANDING VIEW                                                  -->
+<!-- ============================================================ -->
+<div class="view active" id="view-landing">
+  <nav class="land-nav">
+    <div class="land-brand">
+      <div class="land-brand-mark">CD</div>
+      <div class="land-brand-text">Compiler Design<br><span style="color:var(--text-muted);font-weight:400;">RGPV · Sixth Sem</span></div>
+    </div>
+    <div class="land-nav-links">
+      <button class="land-nav-tab" id="landTabPyq" onclick="openApp('pyq')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6M9 16h4M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/></svg>
+        PYQ
+      </button>
+      <button class="land-nav-tab" id="landTabNotes" onclick="openApp('notes')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Notes
+      </button>
+    </div>
+    <div class="land-nav-right">
+      <button class="theme-btn" id="landTheme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <span id="landThemeLabel">Dark mode</span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="land-body">
+    <div class="land-eyebrow">// compiler design · rgpv · 6th semester</div>
+    <h1 class="land-title">Your complete exam toolkit<br>for Compiler Design.</h1>
+    <p class="land-desc">5 years of RGPV papers deduplicated and sorted by unit, plus structured notes — everything you need to walk into the exam prepared.</p>
+
+    <div class="land-cards">
+      <div class="land-card">
+        <div class="land-card-tag">// PYQ</div>
+        <h2 class="land-card-title">Previous Year Questions</h2>
+        <p class="land-card-desc">Five years of RGPV Compiler Design papers, read once and organised for good. Every question sorted into its unit, grouped by topic, and stripped of repeats.</p>
+        <div class="land-card-meta">
+          <span class="meta-chip">5 papers</span>
+          <span class="meta-chip">5 units</span>
+          <span class="meta-chip">deduplicated</span>
+        </div>
+        <button class="cta" onclick="openApp('pyq')">Browse PYQs <span class="mono">→</span></button>
+      </div>
+      <div class="land-card">
+        <div class="land-card-tag">// Notes</div>
+        <h2 class="land-card-title">Unit-wise Notes</h2>
+        <p class="land-card-desc">Concise, exam-focused notes for all five units. Key concepts, definitions, diagrams and mnemonics — structured the same way as the question papers.</p>
+        <div class="land-card-meta">
+          <span class="meta-chip">5 units</span>
+          <span class="meta-chip">key concepts</span>
+          <span class="meta-chip">exam-ready</span>
+        </div>
+        <button class="cta outline" onclick="openApp('notes')">Read Notes <span class="mono">→</span></button>
+      </div>
+    </div>
+
+    <div class="land-pipeline">
+      <div class="stage"><div class="stage-num">01</div><div class="stage-name">Lexical Analysis</div><div class="stage-desc">Compiler phases, LEX, input buffering.</div></div>
+      <div class="stage"><div class="stage-num">02</div><div class="stage-name">Syntax Analysis</div><div class="stage-desc">Grammars, LL/SLR/LALR, SDT.</div></div>
+      <div class="stage"><div class="stage-num">03</div><div class="stage-name">Type &amp; Runtime</div><div class="stage-desc">Type checking, storage allocation.</div></div>
+      <div class="stage"><div class="stage-num">04</div><div class="stage-name">Code Generation</div><div class="stage-desc">3AC, DAGs, flow graphs.</div></div>
+      <div class="stage"><div class="stage-num">05</div><div class="stage-name">Code Optimization</div><div class="stage-desc">Sources, transformations, data flow.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PYQ VIEW                                                      -->
+<!-- ============================================================ -->
+<div class="view" id="view-pyq" style="flex-direction:column;">
+  <!-- top nav -->
+  <nav class="app-topnav">
+    <div class="app-topnav-left">
+      <button class="back-btn" onclick="goHome()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M5 12l7-7M5 12l7 7"/></svg>
+        Home
+      </button>
+      <div class="app-nav-tabs">
+        <button class="app-nav-tab active-tab" onclick="switchTab('pyq')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6M9 16h4M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/></svg>
+          PYQ
+        </button>
+        <button class="app-nav-tab" onclick="switchTab('notes')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Notes
+        </button>
+      </div>
+    </div>
+    <div class="app-topnav-right">
+      <button class="hamburger" id="hamburger-pyq" aria-label="Open navigation">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- app layout -->
+  <div style="display:flex;flex:1;min-height:0;">
+    <aside class="sidebar" id="sidebar-pyq">
+      <div class="brand">
+        <div class="brand-mark">PYQ</div>
+        <div class="brand-text">Previous Year Qs<br><span style="color:var(--text-muted);font-weight:400;">Compiler Design</span></div>
+      </div>
+      <ul class="pipeline" id="pipeline-pyq">
+        <li><div class="nav-item active" data-page="pyq-home"><div class="nav-node">•</div><div><div class="nav-label">Home</div><span class="nav-sub">start here</span></div></div></li>
+        <li><div class="nav-item" data-page="pyq-unit1"><div class="nav-node">01</div><div><div class="nav-label">Lexical Analysis</div><span class="nav-sub">Unit 1</span></div></div></li>
+        <li><div class="nav-item" data-page="pyq-unit2"><div class="nav-node">02</div><div><div class="nav-label">Syntax Analysis &amp; SDT</div><span class="nav-sub">Unit 2</span></div></div></li>
+        <li><div class="nav-item" data-page="pyq-unit3"><div class="nav-node">03</div><div><div class="nav-label">Type Checking &amp; Runtime</div><span class="nav-sub">Unit 3</span></div></div></li>
+        <li><div class="nav-item" data-page="pyq-unit4"><div class="nav-node">04</div><div><div class="nav-label">Code Generation</div><span class="nav-sub">Unit 4</span></div></div></li>
+        <li><div class="nav-item" data-page="pyq-unit5"><div class="nav-node">05</div><div><div class="nav-label">Code Optimization</div><span class="nav-sub">Unit 5</span></div></div></li>
+      </ul>
+      <div class="sidebar-foot">
+        <button class="icon-btn" id="collapseToggle-pyq">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 4v16M4 4h16v16H4z" stroke-linejoin="round"/></svg>
+          <span>Collapse</span>
+        </button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <div class="topbar">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="crumb" id="crumb-pyq">compiler-design / pyq / <b>home</b></div>
+        </div>
+        <div class="crumb" id="progress-pyq">00 / 05</div>
+      </div>
+      <div class="content-wrap">
+
+        <!-- PYQ HOME -->
+        <section class="page active" data-id="pyq-home">
+          <div class="home-eyebrow">// rgpv · 5 previous papers · deduplicated</div>
+          <h1 class="home-title">Everything the exam<br>has already asked you.</h1>
+          <p class="home-desc">Five years of RGPV Compiler Design papers, read once and organised for good. Every question sorted into its unit, grouped by topic, and stripped of repeats — so you revise the syllabus once instead of five separate papers.</p>
+          <div class="home-cta-row">
+            <button class="cta" id="pyq-getStarted">Get started <span class="mono">→</span></button>
+            <!-- <button class="cta outline" onclick="switchTab('notes')">Switch to Notes <span class="mono">→</span></button> -->
+          </div>
+          <div class="home-pipeline">
+            <div class="stage"><div class="stage-num">01</div><div class="stage-name">Lexical Analysis</div><div class="stage-desc">Compiler phases, LEX, input buffering.</div></div>
+            <div class="stage"><div class="stage-num">02</div><div class="stage-name">Syntax Analysis</div><div class="stage-desc">Grammars, LL/SLR/LALR, SDT.</div></div>
+            <div class="stage"><div class="stage-num">03</div><div class="stage-name">Type &amp; Runtime</div><div class="stage-desc">Type checking, storage allocation.</div></div>
+            <div class="stage"><div class="stage-num">04</div><div class="stage-name">Code Generation</div><div class="stage-desc">3AC, DAGs, flow graphs.</div></div>
+            <div class="stage"><div class="stage-num">05</div><div class="stage-name">Code Optimization</div><div class="stage-desc">Sources of optimization, transformations.</div></div>
+          </div>
+        </section>
+
+        <!-- PYQ UNIT 1 -->
+        <section class="page" data-id="pyq-unit1">
+          <div class="unit-eyebrow">Unit 1</div>
+          <h2 class="unit-title">Introduction to Compiling &amp; Lexical Analysis</h2>
+          <p class="unit-intro">Compiler structure, models of compilation, translation phases, and lexical tools. A steady, moderate presence across every paper — mostly definitional and diagram-based.</p>
+          <div class="stat-row">
+            <div class="stat"><div class="stat-val">14–28</div><div class="stat-label">marks per paper on average</div></div>
+            <div class="stat"><div class="stat-val">~20%</div><div class="stat-label">of the total printed paper</div></div>
+            <div class="stat"><div class="stat-val">~3</div><div class="stat-label">sub-questions per paper</div></div>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Translators &amp; basic concepts</div>
+            <ul class="qlist">
+              <li>What is a translator? Compare compiler and interpreter in terms of translation method, memory requirement and speed.</li>
+              <li>Illustrate the concepts of compiler and interpreter.</li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Compiler types, architecture &amp; models</div>
+            <ul class="qlist">
+              <li>What is a cross compiler? Give an example.</li>
+              <li>List and explain the advantages and disadvantages of frontend and backend model of compiler.</li>
+              <li>Discuss the analysis and synthesis model of compilation. Explain each phase using the input: a = (b + c)*(b + c)*2</li>
+              <li>Explain the various compiler construction tools.</li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Phases of a compiler</div>
+            <ul class="qlist">
+              <li class="repeat">Explain in detail the various phases of compilers with an example. <span class="tag">repeated</span></li>
+              <li class="repeat">Explain the various phases of a compiler with a neat sketch. <span class="tag">repeated</span></li>
+              <li>Draw the structure of a compiler and describe each phase. Mention the output of id1 = id2 + id3 * 50 at each phase.</li>
+              <li>Solve a := b + c * 4 through the different phases of the compiler.</li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Lexical analysis &amp; input buffering</div>
+            <ul class="qlist">
+              <li>Explain the following term with an example: lexical analysis.</li>
+              <li>What are the issues to consider in the design of a lexical analyzer? Why is buffering used in lexical analysis?</li>
+              <li>Discuss the functionality of pre-processing and input buffering.</li>
+              <li>Write a short note on: specification and recognition of tokens.</li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">The LEX tool</div>
+            <ul class="qlist">
+              <li>Explain the LEX tool in brief.</li>
+              <li>Design a LEX program that recognizes the tokens of a C language and returns the token found.</li>
+            </ul>
+          </div>
+          <div class="takeaway"><b>Focus:</b> "phases of a compiler" is the single most repeated prompt in this unit — be ready to draw the pipeline and trace one expression through every stage from memory.</div>
+          <div class="pager" id="pager-pyq-unit1"></div>
+        </section>
+
+        <!-- PYQ UNIT 2 -->
+        <section class="page" data-id="pyq-unit2">
+          <div class="unit-eyebrow">Unit 2</div>
+          <h2 class="unit-title">Syntax Analysis &amp; Syntax Directed Translation</h2>
+          <p class="unit-intro">The heaviest unit in the syllabus: grammars, parsing algorithms (top-down and bottom-up), and attribute grammars. December 2024 alone carried 60 marks across its sub-questions.</p>
+          <div class="stat-row">
+            <div class="stat"><div class="stat-val">28–36</div><div class="stat-label">marks per paper (peak: 60)</div></div>
+            <div class="stat"><div class="stat-val">~30–35%</div><div class="stat-label">of the total printed paper</div></div>
+            <div class="stat"><div class="stat-val">4–7</div><div class="stat-label">sub-questions per paper</div></div>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Grammar basics, ambiguity &amp; transformations</div>
+            <ul class="qlist">
+              <li>What is a context-free grammar? Explain its closure properties.</li>
+              <li>Describe: (i) ambiguity, (ii) left recursion.</li>
+              <li>What is left factoring in grammar? Explain with an example.</li>
+              <li>Eliminate left recursion for: S → Aa | b, S → Ac | Sd | ε</li>
+              <li>Find First and Follow sets for: S→aAB/bA/ε, A→aAb/ε, B→bB/ε</li>
+              <li>For S→a/^(T), T→T,S/S — find leftmost derivation, rightmost derivation and parse tree for (((a,a),^(a)),a).</li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Parsing concepts &amp; top-down parsing</div>
+            <ul class="qlist">
+              <li class="repeat">Differentiate between top-down and bottom-up parsing, with examples. <span class="tag">repeated</span></li>
+              <li>What is a parser? Explain backtracking and non-backtracking parsers with their types.</li>
+              <li>What is LL(1) grammar? Give its properties.</li>
+              <li>Construct a recursive-descent parser with backtracking for: S → aSbS | bSaS | ε</li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Bottom-up parsing: SLR &amp; LALR</div>
+            <ul class="qlist">
+              <li>What are the various conflicts that occur during shift-reduce parsing?</li>
+              <li>Write a short note on: SLR parser.</li>
+              <li>Compute LR(0) items and construct an SLR parsing table for: S → L=R | R, L → *R | id, R → L</li>
+              <li>Construct an SLR parsing table for: E → E+T, T → TF/F, F → F*/a/b</li>
+              <li>Construct a LALR table for E→E+T/T, T→T*F/F, F→(E)/id, and verify id + id * id.</li>
+              <li>Construct a LALR parsing table for: E → E+T/T, T → T*F/F, F → (E)/id</li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Syntax directed translation &amp; attributes</div>
+            <ul class="qlist">
+              <li>Define with examples: (i) synthesized attributes, (ii) annotated parse tree, (iii) dependency graph.</li>
+              <li>Differentiate synthesized and inherited attributes, with suitable examples.</li>
+              <li>Differentiate S-attributed and L-attributed definitions, with an example.</li>
+              <li>Write a short note on: L-attributed definition.</li>
+              <li>What is S-attributed and L-attributed SDT? Write SDT rules for: S→S*A, S→A, A→A+B, B→(S), A→B, B→id</li>
+              <li>Explain an SDT to convert infix expressions to postfix.</li>
+            </ul>
+          </div>
+          <div class="takeaway"><b>Focus:</b> you must be able to construct SLR and LALR tables from a blank grammar, and write or evaluate SDT rules — this half of the syllabus alone carries roughly 50% of your attemptable score.</div>
+          <div class="pager" id="pager-pyq-unit2"></div>
+        </section>
+
+        <!-- PYQ UNIT 3 -->
+        <section class="page" data-id="pyq-unit3">
+          <div class="unit-eyebrow">Unit 3</div>
+          <h2 class="unit-title">Type Checking &amp; Run Time Environment</h2>
+          <p class="unit-intro">How a compiler verifies data types and manages memory during execution. Highly irregular: absent in May 2022 and December 2024, but worth up to 28 marks in June 2025.</p>
+          <div class="stat-row">
+            <div class="stat"><div class="stat-val">~13</div><div class="stat-label">marks per paper (0–28 range)</div></div>
+            <div class="stat"><div class="stat-val">~12%</div><div class="stat-label">of the total printed paper</div></div>
+            <div class="stat"><div class="stat-val">2–4</div><div class="stat-label">sub-questions when tested</div></div>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Type checking &amp; equivalence</div>
+            <ul class="qlist">
+              <li>Explain in detail the role of a type checker in a compiler.</li>
+              <li>Explain in brief the equivalence of type expressions.</li>
+              <li>Explain different polymorphic functions with suitable examples.</li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Run time environment &amp; storage allocation</div>
+            <ul class="qlist">
+              <li class="repeat">Discuss the various storage allocation strategies in detail. <span class="tag">May '24 &amp; Jun '25</span></li>
+              <li>How is stack storage allocation different from heap allocation? Describe both, with merits and demerits.</li>
+              <li>What is an activation record? Explain the model of an activation record.</li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Short notes</div>
+            <ul class="qlist">
+              <li>Write a short note on: dynamic storage allocation.</li>
+              <li>Write a short note on: error detection and recovery.</li>
+            </ul>
+          </div>
+          <div class="takeaway"><b>Focus:</b> unpredictable appearance, but when it shows up it leans on storage allocation strategies — know stack vs heap and the activation record model cold.</div>
+          <div class="pager" id="pager-pyq-unit3"></div>
+        </section>
+
+        <!-- PYQ UNIT 4 -->
+        <section class="page" data-id="pyq-unit4">
+          <div class="unit-eyebrow">Unit 4</div>
+          <h2 class="unit-title">Code Generation</h2>
+          <p class="unit-intro">The bridge from front-end analysis to machine code: intermediate code, DAGs, flow graphs and basic blocks. Highly practical and consistently heavy every single year.</p>
+          <div class="stat-row">
+            <div class="stat"><div class="stat-val">20–35</div><div class="stat-label">marks per paper (avg ~28)</div></div>
+            <div class="stat"><div class="stat-val">~25%</div><div class="stat-label">of the total printed paper</div></div>
+            <div class="stat"><div class="stat-val">4–5</div><div class="stat-label">sub-questions per paper</div></div>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Intermediate code &amp; three-address code (3AC)</div>
+            <ul class="qlist">
+              <li>Explain various intermediate code generation techniques in brief.</li>
+              <li>Why are quadruples preferred over triples in an optimizing compiler?</li>
+              <li>Write the 3AC sequence for: P := (X + Y) + (X - C)</li>
+              <li>Generate 3AC for a nested while/if-else block with conditions on a, b, c, d.</li>
+              <li>Generate code for: R = (p + q) - ((r + s) - t)</li>
+              <li>Write a short note on: three address code.</li>
+              <li class="repeat">Write a short note on: back patching. <span class="tag">May '22 &amp; Jun '25</span></li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Basic blocks &amp; flow graphs</div>
+            <ul class="qlist">
+              <li>What are the steps for partitioning three-address statements into basic blocks?</li>
+              <li>Define a flow graph. Explain how a program is converted into one.</li>
+              <li>Represent in a flow graph: i=1; sum=0; while(i&lt;=10){ sum+=i; i++; }</li>
+              <li>Construct a flow graph for a given array-indexing program (prod, i, t1..t6).</li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Directed acyclic graphs (DAG)</div>
+            <ul class="qlist">
+              <li>What is a DAG? Draw the DAG for a = (a*b+c) - (a*b+c)</li>
+              <li>Construct a DAG for: D:=B*C; E:=A+B; B:=B+C; A:=E-D;</li>
+              <li>Write an algorithm to construct a DAG from a basic block.</li>
+              <li>What are the applications of a DAG, and how do DAGs help implement transformations on basic blocks?</li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Register allocation &amp; peephole optimization</div>
+            <ul class="qlist">
+              <li>Discuss register allocation and assignment with examples.</li>
+              <li>Discuss peephole optimization / write a short note on it.</li>
+            </ul>
+          </div>
+          <div class="takeaway"><b>Focus:</b> practice drawing DAGs and flow graphs and writing 3AC by hand — this unit is guaranteed to show up as a diagram or numerical problem.</div>
+          <div class="pager" id="pager-pyq-unit4"></div>
+        </section>
+
+        <!-- PYQ UNIT 5 -->
+        <section class="page" data-id="pyq-unit5">
+          <div class="unit-eyebrow">Unit 5</div>
+          <h2 class="unit-title">Code Optimization</h2>
+          <p class="unit-intro">Making generated code faster: basic block optimizations, loop invariant computations, and global data flow analysis. Reliable but moderate, and mostly theoretical.</p>
+          <div class="stat-row">
+            <div class="stat"><div class="stat-val">12–14</div><div class="stat-label">marks per paper (peak: 21)</div></div>
+            <div class="stat"><div class="stat-val">~11–12%</div><div class="stat-label">of the total printed paper</div></div>
+            <div class="stat"><div class="stat-val">1–3</div><div class="stat-label">sub-questions per paper</div></div>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Sources &amp; areas of optimization</div>
+            <ul class="qlist">
+              <li class="repeat">Explain the different sources of optimization of basic blocks, with a suitable example. <span class="tag">highly repeated</span></li>
+              <li>Explain in detail the principal sources of optimization.</li>
+              <li>What are the three areas of code optimization? Explain each in detail.</li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Code improving transformations</div>
+            <ul class="qlist">
+              <li>Mention the criteria for code-improving transformations.</li>
+              <li>What is local transformation and global transformation?</li>
+              <li>Explain common sub-expression elimination, copy propagation, and moving loop-invariant computations.</li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Global data flow analysis</div>
+            <ul class="qlist">
+              <li>Write a brief note on: global data flow equations.</li>
+              <li>Explain the following term with an example: loop optimization.</li>
+              <li>Write a short note on: common sub-expression elimination.</li>
+            </ul>
+          </div>
+          <div class="takeaway"><b>Focus:</b> Memorize the sources of optimization and the code-improving transformations — that's most of this unit's marks in two topics.</div>
+          <div class="pager" id="pager-pyq-unit5"></div>
+        </section>
+
+        <div class="content-wrap" style="padding-top:0;margin-top:-20px;">
+          <div class="pager" id="pager-pyq-home"></div>
+        </div>
+
+      </div><!-- end content-wrap -->
+    </div><!-- end main -->
+  </div><!-- end flex row -->
+</div><!-- end view-pyq -->
+
+<!-- ============================================================ -->
+<!-- NOTES VIEW                                                    -->
+<!-- ============================================================ -->
+<div class="view" id="view-notes" style="flex-direction:column;">
+  <nav class="app-topnav">
+    <div class="app-topnav-left">
+      <button class="back-btn" onclick="goHome()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M5 12l7-7M5 12l7 7"/></svg>
+        Home
+      </button>
+      <div class="app-nav-tabs">
+        <button class="app-nav-tab" onclick="switchTab('pyq')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6M9 16h4M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/></svg>
+          PYQ
+        </button>
+        <button class="app-nav-tab active-tab" onclick="switchTab('notes')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Notes
+        </button>
+      </div>
+    </div>
+    <div class="app-topnav-right">
+      <button class="hamburger" id="hamburger-notes" aria-label="Open navigation">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <div style="display:flex;flex:1;min-height:0;">
+    <aside class="sidebar" id="sidebar-notes">
+      <div class="brand">
+        <div class="brand-mark">N</div>
+        <div class="brand-text">Unit Notes<br><span style="color:var(--text-muted);font-weight:400;">Compiler Design</span></div>
+      </div>
+      <ul class="pipeline" id="pipeline-notes">
+        <li><div class="nav-item active" data-page="notes-home"><div class="nav-node">•</div><div><div class="nav-label">Home</div><span class="nav-sub">start here</span></div></div></li>
+        <li><div class="nav-item" data-page="notes-unit1"><div class="nav-node">01</div><div><div class="nav-label">Lexical Analysis</div><span class="nav-sub">Unit 1</span></div></div></li>
+        <li><div class="nav-item" data-page="notes-unit2"><div class="nav-node">02</div><div><div class="nav-label">Syntax Analysis &amp; SDT</div><span class="nav-sub">Unit 2</span></div></div></li>
+        <li><div class="nav-item" data-page="notes-unit3"><div class="nav-node">03</div><div><div class="nav-label">Type Checking &amp; Runtime</div><span class="nav-sub">Unit 3</span></div></div></li>
+        <li><div class="nav-item" data-page="notes-unit4"><div class="nav-node">04</div><div><div class="nav-label">Code Generation</div><span class="nav-sub">Unit 4</span></div></div></li>
+        <li><div class="nav-item" data-page="notes-unit5"><div class="nav-node">05</div><div><div class="nav-label">Code Optimization</div><span class="nav-sub">Unit 5</span></div></div></li>
+      </ul>
+      <div class="sidebar-foot">
+        <button class="icon-btn" id="collapseToggle-notes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 4v16M4 4h16v16H4z" stroke-linejoin="round"/></svg>
+          <span>Collapse</span>
+        </button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <div class="topbar">
+        <div class="crumb" id="crumb-notes">compiler-design / notes / <b>home</b></div>
+        <div class="crumb" id="progress-notes">00 / 05</div>
+      </div>
+      <div class="content-wrap">
+
+        <!-- NOTES HOME -->
+        <section class="page active" data-id="notes-home">
+          <div class="home-eyebrow">// concise · exam-focused · unit-wise</div>
+          <h1 class="home-title">Notes for every unit,<br>ready to revise.</h1>
+          <p class="home-desc">Key concepts, definitions, and diagrams for all five units — structured the same way as the question papers so you can cross-reference with PYQs instantly.</p>
+          <div class="home-cta-row">
+            <button class="cta" id="notes-getStarted">Start reading <span class="mono">→</span></button>
+            <button class="cta outline" onclick="switchTab('pyq')">Switch to PYQs <span class="mono">→</span></button>
+          </div>
+          <div class="home-pipeline">
+            <div class="stage"><div class="stage-num">01</div><div class="stage-name">Lexical Analysis</div><div class="stage-desc">Tokens, DFA, LEX, buffering.</div></div>
+            <div class="stage"><div class="stage-num">02</div><div class="stage-name">Syntax Analysis</div><div class="stage-desc">CFG, parsing, SDT attributes.</div></div>
+            <div class="stage"><div class="stage-num">03</div><div class="stage-name">Type &amp; Runtime</div><div class="stage-desc">Type systems, activation records.</div></div>
+            <div class="stage"><div class="stage-num">04</div><div class="stage-name">Code Generation</div><div class="stage-desc">3AC, DAG, basic blocks.</div></div>
+            <div class="stage"><div class="stage-num">05</div><div class="stage-name">Code Optimization</div><div class="stage-desc">Transformations, data flow.</div></div>
+          </div>
+        </section>
+
+        <!-- NOTES UNIT 1 -->
+        <section class="page" data-id="notes-unit1">
+          <div class="unit-eyebrow">Unit 1 — Notes</div>
+          <h2 class="unit-title">Lexical Analysis</h2>
+          <p class="unit-intro">Core concepts: what a compiler does, its detailed phases, input buffering, regex tokens, transition diagrams, and the LEX tool.</p>
+          <div class="stat-row">
+            <div class="stat"><div class="stat-val">12</div><div class="stat-label">syllabus topics covered</div></div>
+            <div class="stat"><div class="stat-val">~20%</div><div class="stat-label">exam weight</div></div>
+            <div class="stat"><div class="stat-val">★★☆</div><div class="stat-label">difficulty level</div></div>
+          </div>
+
+          <!-- TOPIC 1: INTRODUCTION OF COMPILER -->
+          <div class="topic">
+            <div class="topic-title">Introduction of Compiler &amp; Translation Model</div>
+            <p style="font-size: 14px; line-height: 1.6; margin-bottom: 12px;">
+              A <b>Compiler</b> is a specialized system software program that translates a source program written in a <b>high-level language</b> (like C, C++, Java, Rust) into an equivalent target program written in a <b>low-level language</b> (like assembly language or machine code) without changing the functional meaning of the source code.
+            </p>
+            <!-- SVG 1: Compiler Translation Model -->
+            <svg viewBox="0 0 600 120" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="margin: 16px 0; display: block; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 0;">
+              <defs>
+                <marker id="arrow-tm" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--accent)" />
+                </marker>
+              </defs>
+              <rect x="20" y="25" width="150" height="70" fill="var(--bg)" stroke="var(--border)" stroke-width="1.5" rx="4" />
+              <text x="95" y="58" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="var(--text)" text-anchor="middle">Source Program</text>
+              <text x="95" y="78" font-family="Inter, sans-serif" font-size="11" fill="var(--text-muted)" text-anchor="middle">(High-Level C/Rust)</text>
+              <line x1="170" y1="60" x2="225" y2="60" stroke="var(--accent)" stroke-width="2" fill="none" marker-end="url(#arrow-tm)" />
+              <rect x="235" y="25" width="130" height="70" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2" rx="4" />
+              <text x="300" y="65" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700" fill="var(--accent)" text-anchor="middle">COMPILER</text>
+              <line x1="365" y1="60" x2="420" y2="60" stroke="var(--accent)" stroke-width="2" fill="none" marker-end="url(#arrow-tm)" />
+              <rect x="430" y="25" width="150" height="70" fill="var(--bg)" stroke="var(--border)" stroke-width="1.5" rx="4" />
+              <text x="505" y="58" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="var(--text)" text-anchor="middle">Target Program</text>
+              <text x="505" y="78" font-family="Inter, sans-serif" font-size="11" fill="var(--text-muted)" text-anchor="middle">(Machine Assembly)</text>
+            </svg>
+            <h4 style="font-size: 13px; font-weight: 600; margin: 12px 0 6px;">Why It Exists:</h4>
+            <ul class="qlist" style="margin-bottom: 16px;">
+              <li><b>Hardware Gap</b> — CPUs run on binary code. Compilers bridge the abstraction gap so humans can write logical code instead of manual assembly.</li>
+              <li><b>Portability</b> — Separates source syntax from concrete CPU platforms by generating custom binaries for diverse targets.</li>
+              <li><b>Optimization</b> — Optimizes operations globally (reducing register spills, memory latency, and instruction sizes).</li>
+            </ul>
+            <h4 style="font-size: 13px; font-weight: 600; margin: 12px 0 6px;">Compiler vs. Interpreter:</h4>
+            <table class="notes-table">
+              <thead>
+                <tr>
+                  <th>Parameter</th>
+                  <th>Compiler</th>
+                  <th>Interpreter</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>Execution Speed</b></td>
+                  <td>Faster (pre-compiled to target machine instructions).</td>
+                  <td>Slower (translated line-by-line during runtime).</td>
+                </tr>
+                <tr>
+                  <td><b>Output File</b></td>
+                  <td>Generates standalone intermediate target object/executable code.</td>
+                  <td>No intermediate output; translates code on-the-fly.</td>
+                </tr>
+                <tr>
+                  <td><b>Memory Usage</b></td>
+                  <td>Higher (requires storing whole code representation and output).</td>
+                  <td>Lower (only stores instructions currently executing).</td>
+                </tr>
+                <tr>
+                  <td><b>Error Detection</b></td>
+                  <td>Scans the entire source code and reports errors at the end.</td>
+                  <td>Stops execution at the very first error encountered.</td>
+                </tr>
+                <tr>
+                  <td><b>Examples</b></td>
+                  <td>C, C++, Rust, Go, Swift, Haskell</td>
+                  <td>Python, JavaScript, Ruby, PHP, Perl</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- TOPIC 2: TYPES OF COMPILER -->
+          <div class="topic">
+            <div class="topic-title">Types of Compilers</div>
+            <p style="font-size: 14px; line-height: 1.6; margin-bottom: 12px;">
+              Compilers are engineered in different ways depending on compile-speed requirements, memory constraints, and target architectures:
+            </p>
+            <table class="notes-table">
+              <thead>
+                <tr>
+                  <th>Compiler Type</th>
+                  <th>Definition &amp; Core Concept</th>
+                  <th>Key Feature / Application</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>Single-Pass</b></td>
+                  <td>Scans source code exactly once. Parses and emits code concurrently.</td>
+                  <td>Extremely fast compiler speed; minimal global optimization.</td>
+                </tr>
+                <tr>
+                  <td><b>Multi-Pass</b></td>
+                  <td>Scans code multiple times, building intermediate representations.</td>
+                  <td>Allows extensive optimizations; clean division of phases.</td>
+                </tr>
+                <tr>
+                  <td><b>Cross-Compiler</b></td>
+                  <td>Runs on one architecture (e.g., x86) but generates code for another (ARM).</td>
+                  <td>Critical for developing software on smartphones and embedded hardware.</td>
+                </tr>
+                <tr>
+                  <td><b>Incremental</b></td>
+                  <td>Recompiles only modified subroutines rather than the whole codebase.</td>
+                  <td>Speeds up compilation in massive enterprise projects.</td>
+                </tr>
+                <tr>
+                  <td><b>Just-In-Time (JIT)</b></td>
+                  <td>Compiles intermediate bytecode to machine instructions during execution.</td>
+                  <td>Used in Java Virtual Machines (JVM) and JavaScript V8.</td>
+                </tr>
+                <tr>
+                  <td><b>Bootstrapping</b></td>
+                  <td>A compiler written in the same language it compiles (e.g., C compiler written in C).</td>
+                  <td>Requires compiling the initial compiler using a helper system.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- TOPIC 3: MAJOR DATA STRUCTURES -->
+          <div class="topic">
+            <div class="topic-title">Major Data Structures in Compilers</div>
+            <p style="font-size: 14px; line-height: 1.6; margin-bottom: 12px;">
+              To store information and exchange it across phases, compilers use specialized data structures:
+            </p>
+            <table class="notes-table">
+              <thead>
+                <tr>
+                  <th>Data Structure</th>
+                  <th>Definition &amp; Purpose</th>
+                  <th>Implementation Approach</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>Symbol Table</b></td>
+                  <td>Primary registry storing identifier properties (name, scope, type, memory offset).</td>
+                  <td>Hash Tables or Self-Balancing Trees for O(1) or O(log N) operations.</td>
+                </tr>
+                <tr>
+                  <td><b>Abstract Syntax Tree (AST)</b></td>
+                  <td>A compact, hierarchical tree showing program structure, omitting punctuation/keywords.</td>
+                  <td>Tree nodes containing operator types and pointers to operands.</td>
+                </tr>
+                <tr>
+                  <td><b>Parse Tree</b></td>
+                  <td>Graphical representation of grammar derivations; includes all terminal/non-terminals.</td>
+                  <td>Full tree showing 1:1 derivation path (Concrete Syntax Tree).</td>
+                </tr>
+                <tr>
+                  <td><b>Literal Table</b></td>
+                  <td>Registry holding string constants and numeric literals.</td>
+                  <td>Array/Hash of constants to optimize allocation and offset mapping.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- TOPIC 4: FRONT-END & BACK-END / ANALYSIS-SYNTHESIS -->
+          <div class="topic">
+            <div class="topic-title">Front-End vs. Back-End &amp; Analysis-Synthesis Model</div>
+            <p style="font-size: 14px; line-height: 1.6; margin-bottom: 12px;">
+              The compilation pipeline is divided into two logical models: <b>Analysis</b> (Front-End) and <b>Synthesis</b> (Back-End).
+            </p>
+            <!-- SVG 2: Front-End & Back-End -->
+            <svg viewBox="0 0 600 220" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="margin: 16px 0; display: block; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 0;">
+              <defs>
+                <marker id="arrow-as" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--accent)" />
+                </marker>
+              </defs>
+              <rect x="20" y="10" width="560" height="65" fill="var(--bg)" stroke="var(--border)" stroke-width="1.5" rx="6" />
+              <text x="40" y="32" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700" fill="var(--accent)">FRONT-END (Analysis Phase)</text>
+              <text x="40" y="52" font-family="Inter, sans-serif" font-size="11.5" fill="var(--text-muted)">Reads Source Code • Lexical, Syntax, Semantic Analysis &amp; ICG • Machine-Independent</text>
+              <line x1="300" y1="75" x2="300" y2="120" stroke="var(--accent)" stroke-width="2" fill="none" marker-end="url(#arrow-as)" />
+              <text x="315" y="102" font-family="JetBrains Mono, monospace" font-size="11" font-weight="600" fill="var(--accent)">Intermediate Representation (IR)</text>
+              <rect x="20" y="130" width="560" height="65" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2" rx="6" />
+              <text x="40" y="152" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700" fill="var(--accent)">BACK-END (Synthesis Phase)</text>
+              <text x="40" y="172" font-family="Inter, sans-serif" font-size="11.5" fill="var(--text-muted)">Code Optimization &amp; Target Code Generation • Machine-Dependent (Assembly/Binary)</text>
+            </svg>
+            <table class="notes-table">
+              <thead>
+                <tr>
+                  <th>Aspect</th>
+                  <th>Front-End (Analysis)</th>
+                  <th>Back-End (Synthesis)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>Focus</b></td>
+                  <td>Source code structure, spelling, type matching, scope.</td>
+                  <td>Instruction selection, CPU register layout, performance optimization.</td>
+                </tr>
+                <tr>
+                  <td><b>Platform Bound</b></td>
+                  <td>Machine-Independent (runs the same on any OS/CPU).</td>
+                  <td>Machine-Dependent (bound to target hardware/register set).</td>
+                </tr>
+                <tr>
+                  <td><b>Inputs &amp; Outputs</b></td>
+                  <td>Source Code -> Intermediate Representation (IR).</td>
+                  <td>Intermediate Representation (IR) -> Target Assembly/Binary.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- TOPIC 5: PHASES OF COMPILER -->
+          <div class="topic">
+            <div class="topic-title">Phases of a Compiler</div>
+            <p style="font-size: 14px; line-height: 1.6; margin-bottom: 12px;">
+              A compiler consists of six distinct phases. The Symbol Table and Error Handler connect to all of them.
+            </p>
+            <!-- SVG 3: Compiler Phases Diagram -->
+            <svg viewBox="0 0 620 540" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="margin: 16px 0; display: block; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 0;">
+              <defs>
+                <marker id="arrow-p" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--accent)" />
+                </marker>
+                <marker id="dot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4">
+                  <circle cx="5" cy="5" r="3" fill="var(--text-muted)" />
+                </marker>
+              </defs>
+              <text x="310" y="25" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="var(--text)" text-anchor="middle">Source Program</text>
+              <line x1="310" y1="32" x2="310" y2="52" stroke="var(--accent)" stroke-width="1.8" fill="none" marker-end="url(#arrow-p)" />
+              <rect x="20" y="60" width="110" height="380" fill="var(--code-bg)" stroke="var(--border)" stroke-width="1.5" rx="4" />
+              <text x="75" y="250" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="var(--accent)" text-anchor="middle" transform="rotate(-90 75 250)">SYMBOL TABLE</text>
+              <rect x="490" y="60" width="110" height="380" fill="var(--code-bg)" stroke="var(--border)" stroke-width="1.5" rx="4" />
+              <text x="545" y="250" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="var(--accent)" text-anchor="middle" transform="rotate(90 545 250)">ERROR HANDLER</text>
+              <rect x="170" y="55" width="280" height="42" fill="var(--bg)" stroke="var(--border)" stroke-width="1.5" rx="3" />
+              <text x="310" y="81" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="var(--text)" text-anchor="middle">1. Lexical Analysis (Scanner)</text>
+              <line x1="310" y1="97" x2="310" y2="120" stroke="var(--accent)" stroke-width="1.8" fill="none" marker-end="url(#arrow-p)" />
+              <rect x="170" y="120" width="280" height="42" fill="var(--bg)" stroke="var(--border)" stroke-width="1.5" rx="3" />
+              <text x="310" y="146" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="var(--text)" text-anchor="middle">2. Syntax Analysis (Parser)</text>
+              <line x1="310" y1="162" x2="310" y2="185" stroke="var(--accent)" stroke-width="1.8" fill="none" marker-end="url(#arrow-p)" />
+              <rect x="170" y="185" width="280" height="42" fill="var(--bg)" stroke="var(--border)" stroke-width="1.5" rx="3" />
+              <text x="310" y="211" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="var(--text)" text-anchor="middle">3. Semantic Analysis</text>
+              <line x1="310" y1="227" x2="310" y2="250" stroke="var(--accent)" stroke-width="1.8" fill="none" marker-end="url(#arrow-p)" />
+              <rect x="170" y="250" width="280" height="42" fill="var(--bg)" stroke="var(--border)" stroke-width="1.5" rx="3" />
+              <text x="310" y="276" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="var(--text)" text-anchor="middle">4. Intermediate Code Generator</text>
+              <line x1="310" y1="292" x2="310" y2="315" stroke="var(--accent)" stroke-width="1.8" fill="none" marker-end="url(#arrow-p)" />
+              <rect x="170" y="315" width="280" height="42" fill="var(--bg)" stroke="var(--border)" stroke-width="1.5" rx="3" />
+              <text x="310" y="341" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="var(--text)" text-anchor="middle">5. Code Optimizer</text>
+              <line x1="310" y1="357" x2="310" y2="380" stroke="var(--accent)" stroke-width="1.8" fill="none" marker-end="url(#arrow-p)" />
+              <rect x="170" y="380" width="280" height="42" fill="var(--bg)" stroke="var(--border)" stroke-width="1.5" rx="3" />
+              <text x="310" y="406" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="var(--text)" text-anchor="middle">6. Code Generator</text>
+              <line x1="310" y1="422" x2="310" y2="442" stroke="var(--accent)" stroke-width="1.8" fill="none" marker-end="url(#arrow-p)" />
+              <text x="310" y="492" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="var(--text)" text-anchor="middle">Target Program</text>
+              <line x1="130" y1="76" x2="170" y2="76" stroke="var(--text-muted)" stroke-width="1.2" fill="none" marker-start="url(#dot)" marker-end="url(#dot)" />
+              <line x1="130" y1="141" x2="170" y2="141" stroke="var(--text-muted)" stroke-width="1.2" fill="none" marker-start="url(#dot)" marker-end="url(#dot)" />
+              <line x1="130" y1="206" x2="170" y2="206" stroke="var(--text-muted)" stroke-width="1.2" fill="none" marker-start="url(#dot)" marker-end="url(#dot)" />
+              <line x1="130" y1="271" x2="170" y2="271" stroke="var(--text-muted)" stroke-width="1.2" fill="none" marker-start="url(#dot)" marker-end="url(#dot)" />
+              <line x1="130" y1="336" x2="170" y2="336" stroke="var(--text-muted)" stroke-width="1.2" fill="none" marker-start="url(#dot)" marker-end="url(#dot)" />
+              <line x1="130" y1="401" x2="170" y2="401" stroke="var(--text-muted)" stroke-width="1.2" fill="none" marker-start="url(#dot)" marker-end="url(#dot)" />
+              <line x1="450" y1="76" x2="490" y2="76" stroke="var(--text-muted)" stroke-width="1.2" fill="none" marker-start="url(#dot)" marker-end="url(#dot)" />
+              <line x1="450" y1="141" x2="490" y2="141" stroke="var(--text-muted)" stroke-width="1.2" fill="none" marker-start="url(#dot)" marker-end="url(#dot)" />
+              <line x1="450" y1="206" x2="490" y2="206" stroke="var(--text-muted)" stroke-width="1.2" fill="none" marker-start="url(#dot)" marker-end="url(#dot)" />
+              <line x1="450" y1="271" x2="490" y2="271" stroke="var(--text-muted)" stroke-width="1.2" fill="none" marker-start="url(#dot)" marker-end="url(#dot)" />
+              <line x1="450" y1="336" x2="490" y2="336" stroke="var(--text-muted)" stroke-width="1.2" fill="none" marker-start="url(#dot)" marker-end="url(#dot)" />
+              <line x1="450" y1="401" x2="490" y2="401" stroke="var(--text-muted)" stroke-width="1.2" fill="none" marker-start="url(#dot)" marker-end="url(#dot)" />
+            </svg>
+            
+            <h4 style="font-size: 13px; font-weight: 600; margin: 16px 0 6px;">Step-by-Step Walkthrough: Compiling <code>position = initial + rate * 60</code></h4>
+            <ol style="font-size: 14px; line-height: 1.6; margin: 0 0 16px 20px;">
+              <li style="margin-bottom: 8px;">
+                <b>Lexical Analysis (Scanner):</b> Reads character input and emits tokens. Assigns identifiers to entries in the Symbol Table.
+                <br>Token stream: <code>&lt;id, 1&gt; &lt;=&gt; &lt;id, 2&gt; &lt;+&gt; &lt;id, 3&gt; &lt;*&gt; &lt;num, 60&gt;</code>
+              </li>
+              <li style="margin-bottom: 8px;">
+                <b>Syntax Analysis (Parser):</b> Imposes grammar rules. Groups tokens into a hierarchical structure because multiplication has higher precedence than addition.
+                <pre class="notes-code-block">= (assignment)
+ ├── id1 (position)
+ └── + (addition)
+      ├── id2 (initial)
+      └── * (multiplication)
+           ├── id3 (rate)
+           └── num (60)</pre>
+              </li>
+              <li style="margin-bottom: 8px;">
+                <b>Semantic Analysis:</b> Verifies semantic consistency. If <code>id3</code> (rate) is a float, the compiler must convert the integer <code>60</code> to float.
+                <br>Output: Parse tree with integer <code>60</code> explicitly cast to <code>inttofloat(60)</code>.
+              </li>
+              <li style="margin-bottom: 8px;">
+                <b>Intermediate Code Generation:</b> Generates three-address code (TAC) instructions:
+                <pre class="notes-code-block">t1 = inttofloat(60)
+t2 = id3 * t1
+t3 = id2 + t2
+id1 = t3</pre>
+              </li>
+              <li style="margin-bottom: 8px;">
+                <b>Code Optimization:</b> Constant folds <code>inttofloat(60)</code> into a float constant <code>60.0</code> directly at compile time:
+                <pre class="notes-code-block">t1 = id3 * 60.0
+id1 = id2 + t1</pre>
+              </li>
+              <li style="margin-bottom: 8px;">
+                <b>Target Code Generation:</b> Maps operands to CPU registers and generates assembly:
+                <pre class="notes-code-block">LDF R2, id3         ; Load rate into float register R2
+MULF R2, R2, #60.0   ; R2 = R2 * 60.0
+LDF R1, id2         ; Load initial into float register R1
+ADDF R1, R1, R2      ; R1 = R1 + R2
+STF id1, R1         ; Store result to position</pre>
+              </li>
+            </ol>
+          </div>
+
+          <!-- TOPIC 6: LEXICAL ANALYSIS KEY TERMS -->
+          <div class="topic">
+            <div class="topic-title">Lexical Analysis: Tokens, Patterns, and Lexemes</div>
+            <p style="font-size: 14px; line-height: 1.6; margin-bottom: 12px;">
+              The first phase of the compiler reads the input character-by-character and classifies text segments:
+            </p>
+            <!-- SVG 4: Lexical Analyzer Workflow Diagram -->
+            <svg viewBox="0 0 600 160" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="margin: 16px 0; display: block; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 0;">
+              <defs>
+                <marker id="arrow-law" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--accent)" />
+                </marker>
+              </defs>
+              <rect x="20" y="45" width="110" height="70" fill="var(--bg)" stroke="var(--border)" stroke-width="1.5" rx="4" />
+              <text x="75" y="85" font-family="Inter, sans-serif" font-size="12" fill="var(--text)" text-anchor="middle">Source Program</text>
+              <line x1="130" y1="80" x2="190" y2="80" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#arrow-law)" />
+              <text x="160" y="70" font-family="Inter, sans-serif" font-size="11" fill="var(--text-muted)" text-anchor="middle">Characters</text>
+              <rect x="195" y="45" width="140" height="70" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2" rx="4" />
+              <text x="265" y="76" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="var(--accent)" text-anchor="middle">LEXICAL</text>
+              <text x="265" y="93" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="var(--accent)" text-anchor="middle">ANALYZER</text>
+              <line x1="335" y1="65" x2="440" y2="65" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#arrow-law)" />
+              <text x="387" y="55" font-family="Inter, sans-serif" font-size="11" fill="var(--text-muted)" text-anchor="middle">Token Stream</text>
+              <line x1="440" y1="95" x2="335" y2="95" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#arrow-law)" />
+              <text x="387" y="112" font-family="Inter, sans-serif" font-size="11" fill="var(--text-muted)" text-anchor="middle">getNextToken()</text>
+              <rect x="450" y="45" width="130" height="70" fill="var(--bg)" stroke="var(--border)" stroke-width="1.5" rx="4" />
+              <text x="515" y="76" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="var(--text)" text-anchor="middle">Syntax Analyzer</text>
+              <text x="515" y="93" font-family="Inter, sans-serif" font-size="11" fill="var(--text-muted)" text-anchor="middle">(Parser)</text>
+            </svg>
+            <table class="notes-table">
+              <thead>
+                <tr>
+                  <th>Concept</th>
+                  <th>Definition</th>
+                  <th>Example Case</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>Token</b></td>
+                  <td>Abstract category representing syntactic terminal symbols.</td>
+                  <td><code>id</code> (identifier), <code>num</code>, <code>keyword</code>, <code>relation</code></td>
+                </tr>
+                <tr>
+                  <td><b>Pattern</b></td>
+                  <td>The regular expression rule describing strings belonging to a token.</td>
+                  <td><code>[a-zA-Z_][a-zA-Z0-9_]*</code></td>
+                </tr>
+                <tr>
+                  <td><b>Lexeme</b></td>
+                  <td>Concrete string sequence matched by a pattern in the source.</td>
+                  <td><code>position</code>, <code>rate</code>, <code>60</code>, <code>if</code></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h4 style="font-size: 13px; font-weight: 600; margin: 16px 0 6px;">Lexical Errors vs. Syntax Errors:</h4>
+            <table class="notes-table">
+              <thead>
+                <tr>
+                  <th>Feature</th>
+                  <th>Lexical Error</th>
+                  <th>Syntax Error</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>Detection Phase</b></td>
+                  <td>Lexical Analyzer (Scanner).</td>
+                  <td>Syntax Analyzer (Parser).</td>
+                </tr>
+                <tr>
+                  <td><b>Cause</b></td>
+                  <td>Illegal characters or bad token spelling.</td>
+                  <td>Valid tokens placed in structurally invalid combinations.</td>
+                </tr>
+                <tr>
+                  <td><b>Example</b></td>
+                  <td><code>int x = 10#2;</code> (<code>#</code> is not a valid operator).</td>
+                  <td><code>int x = * 5;</code> (illegal operator placement).</td>
+                </tr>
+              </tbody>
+            </table>
+            
+            <h4 style="font-size: 13px; font-weight: 600; margin: 12px 0 6px;">Lexical Error Recovery Strategies:</h4>
+            <ul class="qlist">
+              <li><b>Panic Mode Recovery</b> — Deletes successive invalid characters until the scanner reaches a recognizable token boundary.</li>
+              <li><b>Character Modifications</b> — Tries to insert a missing character, delete a redundant character, transpose adjacent characters, or substitute an invalid character to fix spelling.</li>
+            </ul>
+          </div>
+
+          <!-- TOPIC 7: INPUT BUFFERING -->
+          <div class="topic">
+            <div class="topic-title">Input Buffering: Two-Buffer Scheme &amp; Sentinels</div>
+            <p style="font-size: 14px; line-height: 1.6; margin-bottom: 12px;">
+              Because filesystem disk reads are slow, reading one character at a time directly from disk blocks compiler performance. The compiler uses a buffer memory scheme:
+            </p>
+            <!-- SVG 5: Input Buffering Pointer Locations -->
+            <svg viewBox="0 0 600 180" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="margin: 16px 0; display: block; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 0;">
+              <rect x="20" y="40" width="27" height="36" fill="var(--bg)" stroke="var(--border)" stroke-width="1.2" /><text x="33.5" y="62" font-family="JetBrains Mono, monospace" font-size="12" fill="var(--text)" text-anchor="middle">i</text>
+              <rect x="47" y="40" width="27" height="36" fill="var(--bg)" stroke="var(--border)" stroke-width="1.2" /><text x="60.5" y="62" font-family="JetBrains Mono, monospace" font-size="12" fill="var(--text)" text-anchor="middle">n</text>
+              <rect x="74" y="40" width="27" height="36" fill="var(--bg)" stroke="var(--border)" stroke-width="1.2" /><text x="87.5" y="62" font-family="JetBrains Mono, monospace" font-size="12" fill="var(--text)" text-anchor="middle">i</text>
+              <rect x="101" y="40" width="27" height="36" fill="var(--bg)" stroke="var(--border)" stroke-width="1.2" /><text x="114.5" y="62" font-family="JetBrains Mono, monospace" font-size="12" fill="var(--text)" text-anchor="middle">t</text>
+              <rect x="128" y="40" width="27" height="36" fill="var(--bg)" stroke="var(--border)" stroke-width="1.2" /><text x="141.5" y="62" font-family="JetBrains Mono, monospace" font-size="12" fill="var(--text)" text-anchor="middle">i</text>
+              <rect x="155" y="40" width="27" height="36" fill="var(--bg)" stroke="var(--border)" stroke-width="1.2" /><text x="168.5" y="62" font-family="JetBrains Mono, monospace" font-size="12" fill="var(--text)" text-anchor="middle">a</text>
+              <rect x="182" y="40" width="27" height="36" fill="var(--bg)" stroke="var(--border)" stroke-width="1.2" /><text x="195.5" y="62" font-family="JetBrains Mono, monospace" font-size="12" fill="var(--text)" text-anchor="middle">l</text>
+              <rect x="209" y="40" width="27" height="36" fill="var(--bg)" stroke="var(--border)" stroke-width="1.2" /><text x="222.5" y="62" font-family="JetBrains Mono, monospace" font-size="12" fill="var(--text)" text-anchor="middle"> </text>
+              <rect x="236" y="40" width="27" height="36" fill="var(--bg)" stroke="var(--border)" stroke-width="1.2" /><text x="249.5" y="62" font-family="JetBrains Mono, monospace" font-size="12" fill="var(--text)" text-anchor="middle">+</text>
+              <rect x="263" y="40" width="27" height="36" fill="var(--code-bg)" stroke="var(--accent)" stroke-width="1.2" /><text x="276.5" y="62" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="var(--accent)" text-anchor="middle">EOF</text>
+              <text x="150" y="93" font-family="Inter, sans-serif" font-size="11" fill="var(--text-muted)" text-anchor="middle">Buffer 1 (Size N)</text>
+              <rect x="310" y="40" width="27" height="36" fill="var(--bg)" stroke="var(--border)" stroke-width="1.2" /><text x="323.5" y="62" font-family="JetBrains Mono, monospace" font-size="12" fill="var(--text)" text-anchor="middle"> </text>
+              <rect x="337" y="40" width="27" height="36" fill="var(--bg)" stroke="var(--border)" stroke-width="1.2" /><text x="350.5" y="62" font-family="JetBrains Mono, monospace" font-size="12" fill="var(--text)" text-anchor="middle">r</text>
+              <rect x="364" y="40" width="27" height="36" fill="var(--bg)" stroke="var(--border)" stroke-width="1.2" /><text x="377.5" y="62" font-family="JetBrains Mono, monospace" font-size="12" fill="var(--text)" text-anchor="middle">a</text>
+              <rect x="391" y="40" width="27" height="36" fill="var(--bg)" stroke="var(--border)" stroke-width="1.2" /><text x="404.5" y="62" font-family="JetBrains Mono, monospace" font-size="12" fill="var(--text)" text-anchor="middle">t</text>
+              <rect x="418" y="40" width="27" height="36" fill="var(--bg)" stroke="var(--border)" stroke-width="1.2" /><text x="431.5" y="62" font-family="JetBrains Mono, monospace" font-size="12" fill="var(--text)" text-anchor="middle">e</text>
+              <rect x="445" y="40" width="27" height="36" fill="var(--bg)" stroke="var(--border)" stroke-width="1.2" /><text x="458.5" y="62" font-family="JetBrains Mono, monospace" font-size="12" fill="var(--text)" text-anchor="middle"> </text>
+              <rect x="472" y="40" width="27" height="36" fill="var(--bg)" stroke="var(--border)" stroke-width="1.2" /><text x="485.5" y="62" font-family="JetBrains Mono, monospace" font-size="12" fill="var(--text)" text-anchor="middle">*</text>
+              <rect x="499" y="40" width="27" height="36" fill="var(--bg)" stroke="var(--border)" stroke-width="1.2" /><text x="512.5" y="62" font-family="JetBrains Mono, monospace" font-size="12" fill="var(--text)" text-anchor="middle"> </text>
+              <rect x="526" y="40" width="27" height="36" fill="var(--code-bg)" stroke="var(--accent)" stroke-width="1.2" /><text x="539.5" y="62" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="var(--accent)" text-anchor="middle">EOF</text>
+              <text x="438" y="93" font-family="Inter, sans-serif" font-size="11" fill="var(--text-muted)" text-anchor="middle">Buffer 2 (Size N)</text>
+              <line x1="20" y1="40" x2="20" y2="120" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="2" />
+              <circle cx="20" cy="40" r="3" fill="var(--accent)" />
+              <text x="20" y="135" font-family="JetBrains Mono, monospace" font-size="11" fill="var(--accent)">lexemeBegin</text>
+              <line x1="404" y1="40" x2="404" y2="120" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="2" />
+              <circle cx="404" cy="40" r="3" fill="var(--accent)" />
+              <text x="404" y="135" font-family="JetBrains Mono, monospace" font-size="11" fill="var(--accent)">forward</text>
+            </svg>
+            <h4 style="font-size: 13px; font-weight: 600; margin: 12px 0 6px;">How It Works:</h4>
+            <ul class="qlist" style="margin-bottom: 16px;">
+              <li>Two buffers, each of size $N$ (typically $4$ KB), are allocated in memory.</li>
+              <li><b>lexemeBegin Pointer</b> marks the start of the current candidate lexeme.</li>
+              <li><b>forward Pointer</b> scans forward to inspect characters. When it hits the end of Buffer 1, Buffer 2 is reloaded with fresh input, and the pointer wraps around.</li>
+            </ul>
+            <h4 style="font-size: 13px; font-weight: 600; margin: 12px 0 6px;">Sentinel Optimization:</h4>
+            <p style="font-size: 14px; line-height: 1.6; margin-bottom: 12px;">
+              Normally, scanning a character requires testing two conditions: (1) did we hit the end of the buffer? and (2) what is the character?
+              To eliminate the boundary test on every single character, we place an <code>EOF</code> sentinel character at the end of each buffer. The boundary reload check is only executed when an <code>EOF</code> is encountered:
+            </p>
+            <pre class="notes-code-block">char c = *forward++;
+if (c == EOF) {
+    if (reached_end_of_buffer1()) {
+        reload_buffer2();
+        forward = start_of_buffer2;
+    } else if (reached_end_of_buffer2()) {
+        reload_buffer1();
+        forward = start_of_buffer1;
+    } else {
+        // True End-of-File reached
+        terminate_scan();
+    }
+} else {
+    process_char(c);
+}</pre>
+          </div>
+
+          <!-- TOPIC 8: SPECIFICATION OF TOKENS -->
+          <div class="topic">
+            <div class="topic-title">Specification of Tokens (Regular Expressions)</div>
+            <p style="font-size: 14px; line-height: 1.6; margin-bottom: 12px;">
+              Tokens are mathematically specified using formal regular expressions.
+            </p>
+            <h4 style="font-size: 13px; font-weight: 600; margin: 12px 0 6px;">Languages Operations:</h4>
+            <ul class="qlist" style="margin-bottom: 16px;">
+              <li><b>Union ($L \cup D$)</b> — Strings in $L$ or $D$: <code>{s | s ∈ L or s ∈ D}</code></li>
+              <li><b>Concatenation ($LD$)</b> — Paring strings from $L$ and $D$: <code>{xy | x ∈ L and y ∈ D}</code></li>
+              <li><b>Kleene Closure ($L^*$)</b> — Zero or more occurrences of language $L$: <code>L* = ∪ L^i</code> (includes ε)</li>
+              <li><b>Positive Closure ($L^+$)</b> — One or more occurrences of language $L$: <code>L+ = L L*</code> (excludes ε)</li>
+            </ul>
+            <h4 style="font-size: 13px; font-weight: 600; margin: 12px 0 6px;">Regular Definitions:</h4>
+            <p style="font-size: 14px; line-height: 1.6; margin-bottom: 12px;">
+              Names representing complex regex patterns:
+            </p>
+            <pre class="notes-code-block">letter_     → [A-Za-z_]
+digit       → [0-9]
+identifier  → letter_ ( letter_ | digit )*
+digits      → digit+
+number      → digits ( . digits )? ( [eE] [+-]? digits )?</pre>
+          </div>
+
+          <!-- TOPIC 9: RECOGNITION OF TOKENS -->
+          <div class="topic">
+            <div class="topic-title">Recognition of Tokens &amp; State Diagrams</div>
+            <p style="font-size: 14px; line-height: 1.6; margin-bottom: 12px;">
+              Regular expressions are compiled into transition state diagrams which are executed as Finite Automata.
+            </p>
+            <!-- SVG 6: Transition Diagram for Identifiers -->
+            <svg viewBox="0 0 600 160" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="margin: 16px 0; display: block; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 0;">
+              <defs>
+                <marker id="arrow-tok" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--text-muted)" />
+                </marker>
+              </defs>
+              <line x1="20" y1="80" x2="50" y2="80" stroke="var(--text-muted)" stroke-width="1.5" fill="none" marker-end="url(#arrow-tok)" />
+              <text x="35" y="70" font-family="Inter, sans-serif" font-size="11" fill="var(--text-muted)" text-anchor="middle">Start</text>
+              <circle cx="80" cy="80" r="28" fill="var(--bg)" stroke="var(--text)" stroke-width="1.5" />
+              <text x="80" y="84" font-family="JetBrains Mono, monospace" font-size="13" font-weight="600" fill="var(--text)" text-anchor="middle">0</text>
+              <line x1="108" y1="80" x2="232" y2="80" stroke="var(--text-muted)" stroke-width="1.5" fill="none" marker-end="url(#arrow-tok)" />
+              <text x="170" y="70" font-family="Inter, sans-serif" font-size="11" fill="var(--text-muted)" text-anchor="middle">letter_ or _</text>
+              <circle cx="260" cy="80" r="28" fill="var(--bg)" stroke="var(--text)" stroke-width="1.5" />
+              <text x="260" y="84" font-family="JetBrains Mono, monospace" font-size="13" font-weight="600" fill="var(--text)" text-anchor="middle">1</text>
+              <path d="M 248 54 C 238 20, 282 20, 272 54" stroke="var(--text-muted)" stroke-width="1.5" fill="none" marker-end="url(#arrow-tok)" />
+              <text x="260" y="15" font-family="Inter, sans-serif" font-size="11" fill="var(--text-muted)" text-anchor="middle">letter_, _, or digit</text>
+              <line x1="288" y1="80" x2="432" y2="80" stroke="var(--text-muted)" stroke-width="1.5" fill="none" marker-end="url(#arrow-tok)" />
+              <text x="360" y="70" font-family="Inter, sans-serif" font-size="11" fill="var(--text-muted)" text-anchor="middle">other character</text>
+              <circle cx="468" cy="80" r="28" fill="var(--bg)" stroke="var(--accent)" stroke-width="1.5" />
+              <circle cx="468" cy="80" r="23" fill="none" stroke="var(--accent)" stroke-width="1.5" />
+              <text x="468" y="84" font-family="JetBrains Mono, monospace" font-size="13" font-weight="600" fill="var(--accent)" text-anchor="middle">2*</text>
+              <rect x="420" y="123" width="100" height="24" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="0.7" rx="3" />
+              <text x="470" y="138" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="var(--accent)" text-anchor="middle">Retract 1 char</text>
+            </svg>
+            <p style="font-size: 14px; line-height: 1.6; margin-bottom: 12px;">
+              Accepting states with a star <code>*</code> signify lookahead retraction, meaning the scanner read one character too far to verify token boundaries (e.g., matching the space after an identifier) and must move the <code>forward</code> pointer back by one position.
+            </p>
+          </div>
+
+          <!-- TOPIC 10: DESIGN OF LEXICAL GENERATORS -->
+          <div class="topic">
+            <div class="topic-title">LEX Tool Architecture &amp; Execution</div>
+            <p style="font-size: 14px; line-height: 1.6; margin-bottom: 12px;">
+              <b>LEX</b> is a compiler utility that converts lexical specifications (regular expressions with action C-code) into C scanner source.
+            </p>
+            <!-- SVG 7: LEX Tool Architecture -->
+            <svg viewBox="0 0 600 240" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="margin: 16px 0; display: block; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 0;">
+              <defs>
+                <marker id="arrow-lex" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--accent)" />
+                </marker>
+              </defs>
+              <rect x="20" y="25" width="110" height="60" fill="var(--bg)" stroke="var(--border)" stroke-width="1.5" rx="4" />
+              <text x="75" y="52" font-family="Inter, sans-serif" font-size="12" fill="var(--text)" text-anchor="middle">LEX Source file</text>
+              <text x="75" y="70" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--text-muted)" text-anchor="middle">lexer.l</text>
+              <line x1="130" y1="55" x2="185" y2="55" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#arrow-lex)" />
+              <rect x="195" y="25" width="110" height="60" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2" rx="4" />
+              <text x="250" y="59" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="var(--accent)" text-anchor="middle">LEX Compiler</text>
+              <line x1="305" y1="55" x2="360" y2="55" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#arrow-lex)" />
+              <rect x="370" y="25" width="110" height="60" fill="var(--bg)" stroke="var(--border)" stroke-width="1.5" rx="4" />
+              <text x="425" y="52" font-family="Inter, sans-serif" font-size="12" fill="var(--text)" text-anchor="middle">C Lexer source</text>
+              <text x="425" y="70" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--text-muted)" text-anchor="middle">lex.yy.c</text>
+              <line x1="425" y1="85" x2="425" y2="135" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#arrow-lex)" />
+              <text x="475" y="115" font-family="Inter, sans-serif" font-size="10" fill="var(--text-muted)" text-anchor="middle">gcc compiler</text>
+              <rect x="365" y="145" width="120" height="60" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2" rx="4" />
+              <text x="425" y="179" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="var(--accent)" text-anchor="middle">Executable Scanner</text>
+              <line x1="280" y1="175" x2="355" y2="175" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#arrow-lex)" />
+              <text x="315" y="165" font-family="Inter, sans-serif" font-size="10" fill="var(--text-muted)" text-anchor="middle">Input Stream</text>
+              <line x1="485" y1="175" x2="560" y2="175" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#arrow-lex)" />
+              <text x="522" y="165" font-family="Inter, sans-serif" font-size="10" fill="var(--text-muted)" text-anchor="middle">Tokens</text>
+            </svg>
+            
+            <h4 style="font-size: 13px; font-weight: 600; margin: 16px 0 6px;">Structure of a LEX file (<code>.l</code>):</h4>
+            <pre class="notes-code-block">%{
+/* 1. Declarations: imports, variables, header files */
+#include &lt;stdio.h&gt;
+%}
+digit   [0-9]
+%%
+/* 2. Rules: pattern { C Action Code } */
+"if"            { printf("Keyword: IF\n"); }
+{digit}+        { printf("Num: %s\n", yytext); }
+[ \t\n]+        { /* ignore whitespace */ }
+%%
+/* 3. User Subroutines: C functions */
+int yywrap() { return 1; }
+int main() { yylex(); return 0; }</pre>
+
+            <h4 style="font-size: 13px; font-weight: 600; margin: 16px 0 6px;">Key Global Interfaces in LEX:</h4>
+            <ul class="qlist">
+              <li><b><code>yylex()</code></b> — Core scanning function generated by LEX. When executed, starts reading input.</li>
+              <li><b><code>yytext</code></b> — Character array containing the current string matching the regular expression rules.</li>
+              <li><b><code>yyleng</code></b> — Length of the current matched lexeme.</li>
+              <li><b><code>yyin</code></b> — File pointer representing input source. Defaults to <code>stdin</code>.</li>
+              <li><b><code>yywrap()</code></b> — Executed when EOF is reached. Returns 1 to terminate; returns 0 to switch files.</li>
+            </ul>
+
+            <h4 style="font-size: 13px; font-weight: 600; margin: 16px 0 6px;">Rule Matching Priority Resolution:</h4>
+            <ol style="font-size: 14px; line-height: 1.6; margin: 0 0 16px 20px;">
+              <li><b>Longest Match Rule:</b> Prefers the pattern that consumes the largest number of characters. (e.g. matching <code>then</code> as an identifier instead of keyword <code>the</code> followed by <code>n</code>).</li>
+              <li><b>First Pattern Rule:</b> If lexeme lengths are equal, prefers the pattern specified highest in the <code>.l</code> file rules. (e.g. mapping <code>if</code> as a keyword rather than identifier because the keyword rule is defined first).</li>
+            </ol>
+          </div>
+
+          <!-- EXAM FOCUS CALLOUTS -->
+          <div class="notes-box exam">
+            <div class="notes-box-title exam">Exam Focus &amp; Important Theory (10 Marks)</div>
+            <ul class="qlist">
+              <li class="repeat"><b>Phases Tracing</b> — Practice tracing statements like <code>a = b + c * 50</code> showing all intermediate tokens, trees, and TAC.</li>
+              <li><b>Differentiate Lexical vs Syntax Errors</b> — Know recovery strategies (panic mode, deletion, character transposition) for 5-mark theory answers.</li>
+              <li><b>Sentinel Buffer Diagram</b> — Draw the dual buffer sliding windows with boundary EOFs to capture sentinel advantages in speed checks.</li>
+            </ul>
+          </div>
+
+          <!-- INTERVIEW PREP CALLOUTS -->
+          <div class="notes-box interview">
+            <div class="notes-box-title interview">Interview Q&amp;A Prep</div>
+            <p style="font-size: 13.5px; line-height: 1.5; margin: 0 0 10px;">
+              <b>Q: Why does the compiler use an Intermediate Representation (IR) instead of writing direct machine assembly translation?</b>
+              <br><span style="color: var(--text-muted);">A: Decouples frontend syntax checking from backend hardware details. If you support M languages and N hardware architectures, IR reduces required systems from M × N compilers to M frontends + N backends (M + N systems). Also enables machine-neutral optimizations to be shared.</span>
+            </p>
+            <p style="font-size: 13.5px; line-height: 1.5; margin: 0;">
+              <b>Q: What is the difference between a Lexeme, a Token, and a Pattern?</b>
+              <br><span style="color: var(--text-muted);">A: A token is an abstract class representing grammatical terminals (e.g., <code>id</code>). A pattern is the regex describing valid structures. A lexeme is the actual character sequence in the source matching that pattern (e.g., <code>val1</code>).</span>
+            </p>
+          </div>
+
+          <!-- ONE-PAGE QUICK REVISION SHEET -->
+          <div class="topic">
+            <div class="topic-title">Unit 1 — One-Page Quick Revision Sheet</div>
+            
+            <h4 style="font-size: 13px; font-weight: 600; margin: 12px 0 6px;">Regex Identities Reference:</h4>
+            <ul class="qlist" style="margin-bottom: 16px;">
+              <li>Commutative: <code>r | s = s | r</code></li>
+              <li>Associative: <code>r | (s | t) = (r | s) | t</code></li>
+              <li>Distributive: <code>r(s | t) = rs | rt</code> and <code>(s | t)r = sr | tr</code></li>
+              <li>Closure: <code>(r*)* = r*</code> and <code>r+ = r r*</code></li>
+            </ul>
+
+            <h4 style="font-size: 13px; font-weight: 600; margin: 12px 0 6px;">Compiler Phases Summary:</h4>
+            <table class="notes-table">
+              <thead>
+                <tr>
+                  <th>Phase</th>
+                  <th>Inputs</th>
+                  <th>Outputs</th>
+                  <th>Key Actions &amp; Tasks</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>Lexical</b></td>
+                  <td>Characters</td>
+                  <td>Tokens</td>
+                  <td>Groups input characters, removes comments.</td>
+                </tr>
+                <tr>
+                  <td><b>Syntax</b></td>
+                  <td>Tokens</td>
+                  <td>Parse Tree / AST</td>
+                  <td>Checks grammatical hierarchy (CFG).</td>
+                </tr>
+                <tr>
+                  <td><b>Semantic</b></td>
+                  <td>AST</td>
+                  <td>Decorated AST</td>
+                  <td>Checks type safety and scope validity.</td>
+                </tr>
+                <tr>
+                  <td><b>ICG</b></td>
+                  <td>Decorated AST</td>
+                  <td>3-Address Code (TAC)</td>
+                  <td>Flattens logic into simple 3-operand statements.</td>
+                </tr>
+                <tr>
+                  <td><b>Optimizer</b></td>
+                  <td>3-Address Code</td>
+                  <td>Optimized 3AC</td>
+                  <td>Reduces loop costs and folding constants.</td>
+                </tr>
+                <tr>
+                  <td><b>Code Gen</b></td>
+                  <td>Optimized 3AC</td>
+                  <td>Target Assembly</td>
+                  <td>Assigns registers, schedules instructions.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pager" id="pager-notes-unit1"></div>
+        </section>
+
+        <!-- NOTES UNIT 2 -->
+        <section class="page" data-id="notes-unit2">
+          <div class="unit-eyebrow">Unit 2 — Notes</div>
+          <h2 class="unit-title">Syntax Analysis &amp; Syntax-Directed Translation</h2>
+          <p class="unit-intro">The heaviest unit (~35% exam weight). Full coverage: CFG → parsing → FIRST/FOLLOW → LL(1) → LR/SLR/LALR/CLR → SDT/attributes. GATE- and exam-ready with worked examples, tables and diagrams.</p>
+          <div class="stat-row">
+            <div class="stat"><div class="stat-val">34</div><div class="stat-label">topics covered</div></div>
+            <div class="stat"><div class="stat-val">~35%</div><div class="stat-label">exam weight</div></div>
+            <div class="stat"><div class="stat-val">★★★</div><div class="stat-label">difficulty</div></div>
+          </div>
+
+          <!-- ===== PART A: SYNTAX ANALYSIS ===== -->
+
+          <!-- TOPIC 1: What is Syntax Analysis -->
+          <div class="topic">
+            <div class="topic-title">1. Syntax Analysis — Definition &amp; Position</div>
+            <p style="font-size:14px;line-height:1.7;margin-bottom:12px;">
+              <b>Syntax analysis (parsing)</b> is the second phase of compilation. It takes the token stream from the lexer and checks whether those tokens form a valid sentence of the grammar. If valid it builds a parse tree; if not, it reports a syntax error.
+            </p>
+            <div class="notes-box tip">
+              <div class="notes-box-title tip">// Key distinction</div>
+              <p style="font-size:13px;line-height:1.6;margin:0;">Lexical analysis asks: <em>is each token individually well-formed?</em><br>
+              Syntax analysis asks: <em>are the tokens arranged in a pattern the grammar permits?</em><br>
+              <code style="background:var(--code-bg);padding:1px 5px;border-radius:3px;">int = x + 5;</code> — every token is valid, but placing <code style="background:var(--code-bg);padding:1px 5px;border-radius:3px;">int</code> as an LHS is a <b>syntax error</b>.</p>
+            </div>
+            <svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Arial,sans-serif" width="100%" height="auto" style="margin:14px 0;display:block;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius);">
+              <defs><marker id="u2a1" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#334155"/></marker></defs>
+              <rect x="20" y="15" width="200" height="34" rx="6" fill="#f1f5f9" stroke="#334155"/><text x="120" y="37" text-anchor="middle" font-size="13" fill="#0f172a">Source Program</text>
+              <line x1="120" y1="49" x2="120" y2="75" stroke="#334155" stroke-width="1.5" marker-end="url(#u2a1)"/>
+              <rect x="20" y="76" width="200" height="46" rx="6" fill="#dbeafe" stroke="#1d4ed8"/><text x="120" y="97" text-anchor="middle" font-size="13" fill="#1e3a8a" font-weight="600">Lexical Analyzer</text><text x="120" y="113" text-anchor="middle" font-size="11" fill="#1e3a8a">Phase 1: chars → tokens</text>
+              <line x1="120" y1="122" x2="120" y2="148" stroke="#334155" stroke-width="1.5" marker-end="url(#u2a1)"/><text x="132" y="140" font-size="10" fill="#475569">token stream</text>
+              <rect x="20" y="149" width="200" height="52" rx="6" fill="#dcfce7" stroke="#15803d"/><text x="120" y="171" text-anchor="middle" font-size="13" fill="#14532d" font-weight="700">Syntax Analyzer</text><text x="120" y="186" text-anchor="middle" font-size="11" fill="#14532d">(PARSER) — THIS UNIT</text>
+              <line x1="120" y1="201" x2="120" y2="227" stroke="#334155" stroke-width="1.5" marker-end="url(#u2a1)"/>
+              <rect x="20" y="228" width="200" height="46" rx="6" fill="#fef3c7" stroke="#b45309"/><text x="120" y="255" text-anchor="middle" font-size="13" fill="#78350f" font-weight="600">Semantic Analyzer</text>
+              <rect x="330" y="149" width="220" height="52" rx="6" fill="#fee2e2" stroke="#b91c1c"/><text x="440" y="171" text-anchor="middle" font-size="12" fill="#7f1d1d" font-weight="600">Error Handler</text><text x="440" y="186" text-anchor="middle" font-size="10" fill="#7f1d1d">reports syntax errors, may attempt recovery</text>
+              <line x1="220" y1="175" x2="328" y2="175" stroke="#334155" stroke-width="1.3" stroke-dasharray="3 2" marker-end="url(#u2a1)"/>
+              <text x="120" y="296" text-anchor="middle" font-size="10" fill="#475569" font-style="italic">parse tree / AST → IR generation → optimization → code gen</text>
+            </svg>
+          </div>
+
+          <!-- TOPIC 2: Role of the Parser -->
+          <div class="topic">
+            <div class="topic-title">2. Role of the Parser</div>
+            <table class="notes-table">
+              <thead><tr><th>#</th><th>Responsibility</th><th>Detail</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>Grammar verification</td><td>Confirms token sequence is a valid sentence of the CFG</td></tr>
+                <tr><td>2</td><td>Tree construction</td><td>Builds parse tree / AST capturing derivation structure</td></tr>
+                <tr><td>3</td><td>Error detection</td><td>Reports location and nature of syntax errors</td></tr>
+                <tr><td>4</td><td>Error recovery</td><td>Panic-mode, phrase-level, error productions, or global correction</td></tr>
+                <tr><td>5</td><td>Symbol-table interface</td><td>Triggers insertion/lookup of identifiers as they are recognized</td></tr>
+              </tbody>
+            </table>
+            <table class="notes-table" style="margin-top:12px;">
+              <thead><tr><th>Property</th><th>Top-Down</th><th>Bottom-Up</th></tr></thead>
+              <tbody>
+                <tr><td>Tree built</td><td>Root → leaves</td><td>Leaves → root</td></tr>
+                <tr><td>Simulates</td><td>Leftmost derivation</td><td>Rightmost derivation (in reverse)</td></tr>
+                <tr><td>Grammar class</td><td>LL grammars</td><td>LR grammars (strict superset of LL)</td></tr>
+                <tr><td>Examples</td><td>Recursive descent, LL(1)</td><td>SLR(1), LALR(1), CLR(1)</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- TOPIC 3: CFG -->
+          <div class="topic">
+            <div class="topic-title">Context-Free Grammar (CFG)</div>
+            <p style="font-size:14px;line-height:1.6;margin-bottom:12px;">
+              A <b>CFG</b> is a 4-tuple <b>G = (V, T, P, S)</b> where V = non-terminals, T = terminals, P = productions (A → α), S = start symbol. Every valid program is a sentence of L(G).
+            </p>
+            <!-- SVG: CFG components diagram -->
+            <svg viewBox="0 0 620 130" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="margin:14px 0;display:block;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius);padding:8px 0;">
+              <defs>
+                <marker id="a2" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--accent)"/>
+                </marker>
+              </defs>
+              <rect x="10" y="30" width="120" height="70" rx="4" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+              <text x="70" y="58" font-family="JetBrains Mono,monospace" font-size="13" font-weight="700" fill="var(--accent)" text-anchor="middle">V</text>
+              <text x="70" y="76" font-family="Inter,sans-serif" font-size="11" fill="var(--text-muted)" text-anchor="middle">Non-terminals</text>
+              <text x="70" y="90" font-family="Inter,sans-serif" font-size="10" fill="var(--text-muted)" text-anchor="middle">E, T, F, S</text>
+              <rect x="150" y="30" width="120" height="70" rx="4" fill="var(--code-bg)" stroke="var(--border)" stroke-width="1.5"/>
+              <text x="210" y="58" font-family="JetBrains Mono,monospace" font-size="13" font-weight="700" fill="var(--text)" text-anchor="middle">T</text>
+              <text x="210" y="76" font-family="Inter,sans-serif" font-size="11" fill="var(--text-muted)" text-anchor="middle">Terminals</text>
+              <text x="210" y="90" font-family="Inter,sans-serif" font-size="10" fill="var(--text-muted)" text-anchor="middle">id, +, *, (, )</text>
+              <rect x="290" y="30" width="150" height="70" rx="4" fill="var(--code-bg)" stroke="var(--border)" stroke-width="1.5"/>
+              <text x="365" y="58" font-family="JetBrains Mono,monospace" font-size="13" font-weight="700" fill="var(--text)" text-anchor="middle">P</text>
+              <text x="365" y="76" font-family="Inter,sans-serif" font-size="11" fill="var(--text-muted)" text-anchor="middle">Productions</text>
+              <text x="365" y="90" font-family="Inter,sans-serif" font-size="10" fill="var(--text-muted)" text-anchor="middle">E → E+T | T</text>
+              <rect x="460" y="30" width="140" height="70" rx="4" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+              <text x="530" y="58" font-family="JetBrains Mono,monospace" font-size="13" font-weight="700" fill="var(--accent)" text-anchor="middle">S</text>
+              <text x="530" y="76" font-family="Inter,sans-serif" font-size="11" fill="var(--text-muted)" text-anchor="middle">Start Symbol</text>
+              <text x="530" y="90" font-family="Inter,sans-serif" font-size="10" fill="var(--text-muted)" text-anchor="middle">Top-level NT</text>
+              <text x="310" y="20" font-family="JetBrains Mono,monospace" font-size="11" fill="var(--accent)" text-anchor="middle">G = ( V ,  T ,  P ,  S )</text>
+            </svg>
+            <h4 style="font-size:13px;font-weight:600;margin:12px 0 6px;">Grammar Transformations (required before LL parsing):</h4>
+            <table class="notes-table">
+              <thead><tr><th>Problem</th><th>What It Is</th><th>Fix</th><th>Example</th></tr></thead>
+              <tbody>
+                <tr><td><b>Left Recursion</b></td><td>A → Aα (causes infinite loop in top-down)</td><td>A → βA' &nbsp; A' → αA' | ε</td><td>E → E+T | T &nbsp;→&nbsp; E → TE', E' → +TE'|ε</td></tr>
+                <tr><td><b>Left Factoring</b></td><td>A → αβ | αγ (parser can't choose)</td><td>A → αA' &nbsp; A' → β | γ</td><td>A → abD | abE &nbsp;→&nbsp; A → abA', A' → D|E</td></tr>
+                <tr><td><b>Ambiguity</b></td><td>String has 2+ parse trees</td><td>Rewrite with precedence levels</td><td>E→E+E|E*E|id &nbsp;→&nbsp; use E,T,F hierarchy</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- TOPIC 2: PARSE TREE & DERIVATIONS -->
+          <div class="topic">
+            <div class="topic-title">Parse Tree &amp; Derivations</div>
+            <p style="font-size:14px;line-height:1.6;margin-bottom:12px;">
+              A <b>Parse Tree</b> shows the derivation graphically. Root = Start Symbol, internal nodes = Non-terminals, leaves = Terminals. The frontier (leaves L→R) = the input string.
+            </p>
+            <!-- SVG: Parse Tree for id+id*id -->
+            <svg viewBox="0 0 500 220" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="margin:14px 0;display:block;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius);">
+              <defs>
+                <marker id="a3" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                  <path d="M 0 2 L 8 5 L 0 8 z" fill="var(--border)"/>
+                </marker>
+              </defs>
+              <!-- title -->
+              <text x="250" y="18" font-family="JetBrains Mono,monospace" font-size="11" fill="var(--accent)" text-anchor="middle">Parse Tree for: id + id * id</text>
+              <!-- Root E -->
+              <circle cx="250" cy="40" r="14" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+              <text x="250" y="45" font-family="JetBrains Mono,monospace" font-size="12" font-weight="700" fill="var(--accent)" text-anchor="middle">E</text>
+              <!-- E -> E + T -->
+              <line x1="240" y1="54" x2="150" y2="86" stroke="var(--border)" stroke-width="1.5"/>
+              <line x1="250" y1="54" x2="250" y2="86" stroke="var(--border)" stroke-width="1.5"/>
+              <line x1="260" y1="54" x2="355" y2="86" stroke="var(--border)" stroke-width="1.5"/>
+              <!-- left E -->
+              <circle cx="150" cy="100" r="13" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+              <text x="150" y="105" font-family="JetBrains Mono,monospace" font-size="12" fill="var(--accent)" text-anchor="middle">E</text>
+              <!-- + terminal -->
+              <rect x="237" y="88" width="26" height="24" rx="3" fill="var(--code-bg)" stroke="var(--border)" stroke-width="1"/>
+              <text x="250" y="104" font-family="JetBrains Mono,monospace" font-size="12" fill="var(--text)" text-anchor="middle">+</text>
+              <!-- T -->
+              <circle cx="355" cy="100" r="13" fill="var(--code-bg)" stroke="var(--border)" stroke-width="1.5"/>
+              <text x="355" y="105" font-family="JetBrains Mono,monospace" font-size="12" fill="var(--text)" text-anchor="middle">T</text>
+              <!-- E -> T -->
+              <line x1="150" y1="113" x2="150" y2="140" stroke="var(--border)" stroke-width="1.5"/>
+              <circle cx="150" cy="154" r="13" fill="var(--code-bg)" stroke="var(--border)" stroke-width="1.5"/>
+              <text x="150" y="159" font-family="JetBrains Mono,monospace" font-size="12" fill="var(--text)" text-anchor="middle">T</text>
+              <!-- T -> F -> id -->
+              <line x1="150" y1="167" x2="150" y2="190" stroke="var(--border)" stroke-width="1.5"/>
+              <rect x="130" y="190" width="40" height="22" rx="3" fill="var(--bg)" stroke="var(--accent)" stroke-width="1"/>
+              <text x="150" y="205" font-family="JetBrains Mono,monospace" font-size="11" fill="var(--accent)" text-anchor="middle">id</text>
+              <!-- T -> T * F -->
+              <line x1="345" y1="113" x2="290" y2="145" stroke="var(--border)" stroke-width="1.5"/>
+              <line x1="355" y1="113" x2="355" y2="145" stroke="var(--border)" stroke-width="1.5"/>
+              <line x1="365" y1="113" x2="415" y2="145" stroke="var(--border)" stroke-width="1.5"/>
+              <!-- T child -->
+              <circle cx="290" cy="158" r="13" fill="var(--code-bg)" stroke="var(--border)" stroke-width="1.5"/>
+              <text x="290" y="163" font-family="JetBrains Mono,monospace" font-size="12" fill="var(--text)" text-anchor="middle">T</text>
+              <!-- * -->
+              <rect x="342" y="146" width="26" height="24" rx="3" fill="var(--code-bg)" stroke="var(--border)" stroke-width="1"/>
+              <text x="355" y="162" font-family="JetBrains Mono,monospace" font-size="12" fill="var(--text)" text-anchor="middle">*</text>
+              <!-- F -->
+              <circle cx="415" cy="158" r="13" fill="var(--code-bg)" stroke="var(--border)" stroke-width="1.5"/>
+              <text x="415" y="163" font-family="JetBrains Mono,monospace" font-size="12" fill="var(--text)" text-anchor="middle">F</text>
+              <!-- id leaves -->
+              <line x1="290" y1="171" x2="290" y2="190" stroke="var(--border)" stroke-width="1.5"/>
+              <rect x="270" y="190" width="40" height="22" rx="3" fill="var(--bg)" stroke="var(--accent)" stroke-width="1"/>
+              <text x="290" y="205" font-family="JetBrains Mono,monospace" font-size="11" fill="var(--accent)" text-anchor="middle">id</text>
+              <line x1="415" y1="171" x2="415" y2="190" stroke="var(--border)" stroke-width="1.5"/>
+              <rect x="395" y="190" width="40" height="22" rx="3" fill="var(--bg)" stroke="var(--accent)" stroke-width="1"/>
+              <text x="415" y="205" font-family="JetBrains Mono,monospace" font-size="11" fill="var(--accent)" text-anchor="middle">id</text>
+              <!-- legend -->
+              <circle cx="30" cy="210" r="8" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+              <text x="44" y="214" font-family="Inter,sans-serif" font-size="10" fill="var(--text-muted)">= Non-terminal</text>
+              <rect x="155" y="202" width="20" height="16" rx="2" fill="var(--bg)" stroke="var(--accent)" stroke-width="1"/>
+              <text x="180" y="214" font-family="Inter,sans-serif" font-size="10" fill="var(--text-muted)">= Terminal (leaf)</text>
+            </svg>
+            <table class="notes-table" style="margin-top:12px;">
+              <thead><tr><th>Derivation Type</th><th>Rule</th><th>Used In</th><th>Key fact</th></tr></thead>
+              <tbody>
+                <tr><td><b>Leftmost</b></td><td>Always expand leftmost NT first</td><td>Top-Down / LL parsers</td><td>Predictive parsing uses this</td></tr>
+                <tr><td><b>Rightmost</b></td><td>Always expand rightmost NT first</td><td>Bottom-Up / LR parsers (reversed)</td><td>LR tracing reads this backwards</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- TOPIC 3: FIRST & FOLLOW -->
+          <div class="topic">
+            <div class="topic-title">FIRST &amp; FOLLOW Sets</div>
+            <p style="font-size:14px;line-height:1.6;margin-bottom:12px;">Foundation for all parsing tables. Compute these before building any LL(1) or SLR table.</p>
+            <svg viewBox="0 0 580 150" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="margin:14px 0;display:block;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius);">
+              <rect x="20" y="20" width="250" height="110" rx="5" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+              <text x="145" y="42" font-family="JetBrains Mono,monospace" font-size="13" font-weight="700" fill="var(--accent)" text-anchor="middle">FIRST(α)</text>
+              <text x="145" y="62" font-family="Inter,sans-serif" font-size="11" fill="var(--text)" text-anchor="middle">Terminals that can START</text>
+              <text x="145" y="78" font-family="Inter,sans-serif" font-size="11" fill="var(--text)" text-anchor="middle">strings derived from α</text>
+              <text x="145" y="98" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--text-muted)" text-anchor="middle">ε ∈ FIRST if α ⇒* ε</text>
+              <text x="145" y="116" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--text-muted)" text-anchor="middle">FIRST(id+T) = {id}</text>
+              <line x1="290" y1="20" x2="290" y2="130" stroke="var(--border)" stroke-width="1" stroke-dasharray="4"/>
+              <rect x="310" y="20" width="250" height="110" rx="5" fill="var(--code-bg)" stroke="var(--border)" stroke-width="1.5"/>
+              <text x="435" y="42" font-family="JetBrains Mono,monospace" font-size="13" font-weight="700" fill="var(--text)" text-anchor="middle">FOLLOW(A)</text>
+              <text x="435" y="62" font-family="Inter,sans-serif" font-size="11" fill="var(--text)" text-anchor="middle">Terminals immediately</text>
+              <text x="435" y="78" font-family="Inter,sans-serif" font-size="11" fill="var(--text)" text-anchor="middle">AFTER A in sentential form</text>
+              <text x="435" y="98" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--text-muted)" text-anchor="middle">$ ∈ FOLLOW(Start). NEVER ε!</text>
+              <text x="435" y="116" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--text-muted)" text-anchor="middle">FOLLOW(E) = { ), $ }</text>
+            </svg>
+            <ul class="qlist" style="margin-bottom:10px;">
+              <li><b>FIRST rules:</b> FIRST(terminal)={terminal}; if A→ε add ε; for A→X₁X₂…Xk chain through Xi while ε∈FIRST(Xi)</li>
+              <li><b>FOLLOW rules:</b> $ in FOLLOW(S); A→αBβ: add FIRST(β)−{ε}; if ε∈FIRST(β) or B at end: add FOLLOW(A)</li>
+              <li class="repeat">ε is <b>NEVER</b> in FOLLOW. $ is <b>NEVER</b> in FIRST. <span class="tag">exam trap</span></li>
+            </ul>
+            <div class="notes-box exam">
+              <div class="notes-box-title exam">// Worked Example: E→TE', E'→+TE'|ε, T→FT', T'→*FT'|ε, F→(E)|id</div>
+              <table class="notes-table" style="margin-top:8px;">
+                <thead><tr><th>NT</th><th>FIRST</th><th>FOLLOW</th></tr></thead>
+                <tbody>
+                  <tr><td>E</td><td>{ (, id }</td><td>{ ), $ }</td></tr>
+                  <tr><td>E'</td><td>{ +, ε }</td><td>{ ), $ }</td></tr>
+                  <tr><td>T</td><td>{ (, id }</td><td>{ +, ), $ }</td></tr>
+                  <tr><td>T'</td><td>{ *, ε }</td><td>{ +, ), $ }</td></tr>
+                  <tr><td>F</td><td>{ (, id }</td><td>{ *, +, ), $ }</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TOPIC 4: TOP-DOWN vs BOTTOM-UP -->
+          <div class="topic">
+            <div class="topic-title">Top-Down vs Bottom-Up Parsing</div>
+            <svg viewBox="0 0 580 200" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="margin:14px 0;display:block;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius);">
+              <defs>
+                <marker id="arr-td" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1 L 10 5 L 0 9 z" fill="var(--accent)"/></marker>
+                <marker id="arr-bu" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1 L 10 5 L 0 9 z" fill="var(--text-muted)"/></marker>
+              </defs>
+              <text x="145" y="18" font-family="JetBrains Mono,monospace" font-size="12" font-weight="700" fill="var(--accent)" text-anchor="middle">TOP-DOWN (LL)</text>
+              <rect x="80" y="26" width="130" height="28" rx="4" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+              <text x="145" y="44" font-family="Inter,sans-serif" font-size="12" font-weight="600" fill="var(--accent)" text-anchor="middle">Start Symbol (S)</text>
+              <line x1="145" y1="54" x2="145" y2="74" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#arr-td)"/>
+              <rect x="70" y="75" width="150" height="28" rx="4" fill="var(--code-bg)" stroke="var(--border)" stroke-width="1.5"/>
+              <text x="145" y="93" font-family="Inter,sans-serif" font-size="11" fill="var(--text)" text-anchor="middle">Predict &amp; Expand NT</text>
+              <line x1="145" y1="103" x2="145" y2="123" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#arr-td)"/>
+              <rect x="70" y="124" width="150" height="28" rx="4" fill="var(--code-bg)" stroke="var(--border)" stroke-width="1.5"/>
+              <text x="145" y="142" font-family="Inter,sans-serif" font-size="11" fill="var(--text)" text-anchor="middle">Match Terminals</text>
+              <line x1="145" y1="152" x2="145" y2="172" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#arr-td)"/>
+              <rect x="60" y="173" width="170" height="24" rx="4" fill="var(--accent)" stroke="var(--accent)" stroke-width="1.5"/>
+              <text x="145" y="189" font-family="Inter,sans-serif" font-size="11" font-weight="600" fill="white" text-anchor="middle">Leaves = Input String ✓</text>
+              <line x1="290" y1="10" x2="290" y2="200" stroke="var(--border)" stroke-width="1" stroke-dasharray="5"/>
+              <text x="435" y="18" font-family="JetBrains Mono,monospace" font-size="12" font-weight="700" fill="var(--text-muted)" text-anchor="middle">BOTTOM-UP (LR)</text>
+              <rect x="355" y="173" width="160" height="24" rx="4" fill="var(--code-bg)" stroke="var(--border)" stroke-width="1.5"/>
+              <text x="435" y="189" font-family="Inter,sans-serif" font-size="11" font-weight="600" fill="var(--text)" text-anchor="middle">Input Token Stream</text>
+              <line x1="435" y1="172" x2="435" y2="152" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#arr-bu)"/>
+              <rect x="355" y="124" width="160" height="28" rx="4" fill="var(--code-bg)" stroke="var(--border)" stroke-width="1.5"/>
+              <text x="435" y="142" font-family="Inter,sans-serif" font-size="11" fill="var(--text)" text-anchor="middle">Shift / Reduce handles</text>
+              <line x1="435" y1="123" x2="435" y2="103" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#arr-bu)"/>
+              <rect x="355" y="75" width="160" height="28" rx="4" fill="var(--code-bg)" stroke="var(--border)" stroke-width="1.5"/>
+              <text x="435" y="93" font-family="Inter,sans-serif" font-size="11" fill="var(--text)" text-anchor="middle">Stack + ACTION/GOTO</text>
+              <line x1="435" y1="74" x2="435" y2="54" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#arr-bu)"/>
+              <rect x="360" y="26" width="150" height="28" rx="4" fill="var(--code-bg)" stroke="var(--border)" stroke-width="1.5"/>
+              <text x="435" y="44" font-family="Inter,sans-serif" font-size="12" font-weight="600" fill="var(--text)" text-anchor="middle">Start Symbol (S) ✓</text>
+            </svg>
+            <table class="notes-table">
+              <thead><tr><th>Property</th><th>Top-Down (LL)</th><th>Bottom-Up (LR)</th></tr></thead>
+              <tbody>
+                <tr><td>Direction</td><td>Root → Leaves</td><td>Leaves → Root</td></tr>
+                <tr><td>Derivation</td><td>Leftmost</td><td>Rightmost (reversed)</td></tr>
+                <tr><td>Left recursion</td><td>❌ Infinite loop</td><td>✅ Handles it</td></tr>
+                <tr><td>Power</td><td>Less (LL grammars only)</td><td>More (all LR grammars)</td></tr>
+                <tr><td>Examples</td><td>LL(1), Recursive Descent</td><td>SLR, LALR, CLR</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- TOPIC 5: LR PARSER HIERARCHY -->
+          <div class="topic">
+            <div class="topic-title">LR Parser Power Hierarchy</div>
+            <svg viewBox="0 0 500 195" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="margin:14px 0;display:block;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius);">
+              <ellipse cx="250" cy="100" rx="230" ry="85" fill="none" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="5"/>
+              <text x="460" y="48" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--text-muted)">CLR(1)</text>
+              <ellipse cx="250" cy="100" rx="175" ry="65" fill="none" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="5"/>
+              <text x="412" y="68" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--text-muted)">LALR(1)</text>
+              <ellipse cx="250" cy="100" rx="120" ry="45" fill="none" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="5"/>
+              <text x="362" y="88" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--text-muted)">SLR(1)</text>
+              <ellipse cx="250" cy="100" rx="65" ry="26" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2"/>
+              <text x="250" y="105" font-family="JetBrains Mono,monospace" font-size="12" font-weight="700" fill="var(--accent)" text-anchor="middle">LR(0)</text>
+              <text x="250" y="183" font-family="Inter,sans-serif" font-size="10" fill="var(--text-muted)" text-anchor="middle">LR(0) ⊂ SLR(1) ⊂ LALR(1) ⊂ CLR(1) — outer = more grammars handled</text>
+            </svg>
+            <table class="notes-table">
+              <thead><tr><th>Parser</th><th>Lookahead</th><th>Table size</th><th>Used in</th></tr></thead>
+              <tbody>
+                <tr><td><b>LR(0)</b></td><td>None</td><td>Small</td><td>Theory only</td></tr>
+                <tr><td><b>SLR(1)</b></td><td>FOLLOW(A)</td><td>Small</td><td>Rarely</td></tr>
+                <tr><td><b>LALR(1)</b></td><td>Merged CLR lookaheads</td><td>Small</td><td><b>yacc / bison ← industry standard</b></td></tr>
+                <tr><td><b>CLR(1)</b></td><td>Exact per-item</td><td>Large</td><td>Reference only</td></tr>
+              </tbody>
+            </table>
+            <div class="notes-box tip" style="margin-top:12px;">
+              <div class="notes-box-title tip">// SLR Table Construction — Step by Step</div>
+              <ul class="qlist">
+                <li><b>1.</b> Augment: add S' → S</li>
+                <li><b>2.</b> I0 = CLOSURE({S'→.S}), then GOTO(Ii, X) for every symbol X</li>
+                <li><b>3.</b> ACTION: [A→α.aβ] in Ii → shift; [A→α.] in Ii → reduce on FOLLOW(A); [S'→S.] → accept</li>
+                <li><b>4.</b> GOTO table: for non-terminals only</li>
+                <li><b>Conflict?</b> Multiple entries in one cell = grammar is NOT SLR(1)</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- TOPIC 6: SDT -->
+          <div class="topic">
+            <div class="topic-title">Syntax Directed Translation (SDT)</div>
+            <p style="font-size:14px;line-height:1.6;margin-bottom:12px;">
+              An <b>SDD</b> extends CFG by attaching <b>attributes</b> (values) to grammar symbols and <b>semantic rules</b> to productions. Used to compute expression values, propagate types, and generate IR code.
+            </p>
+            <svg viewBox="0 0 560 195" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="margin:14px 0;display:block;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius);">
+              <defs>
+                <marker id="a-up2" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1 L 10 5 L 0 9 z" fill="var(--accent)"/></marker>
+                <marker id="a-dn2" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1 L 10 5 L 0 9 z" fill="#d97706"/></marker>
+              </defs>
+              <text x="140" y="18" font-family="JetBrains Mono,monospace" font-size="12" font-weight="700" fill="var(--accent)" text-anchor="middle">Synthesized ↑</text>
+              <rect x="80" y="30" width="120" height="28" rx="4" fill="var(--code-bg)" stroke="var(--border)" stroke-width="1.5"/>
+              <text x="140" y="48" font-family="JetBrains Mono,monospace" font-size="11" fill="var(--text)" text-anchor="middle">Child.val</text>
+              <line x1="140" y1="58" x2="140" y2="88" stroke="var(--accent)" stroke-width="2.5" marker-end="url(#a-up2)"/>
+              <rect x="60" y="90" width="160" height="30" rx="4" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+              <text x="140" y="109" font-family="JetBrains Mono,monospace" font-size="11" font-weight="700" fill="var(--accent)" text-anchor="middle">Parent.val = f(child)</text>
+              <text x="140" y="140" font-family="Inter,sans-serif" font-size="11" fill="var(--text-muted)" text-anchor="middle">E.val = E1.val + T.val</text>
+              <text x="140" y="158" font-family="Inter,sans-serif" font-size="10" fill="var(--text-muted)" text-anchor="middle">→ S-Attributed, LR parser</text>
+              <line x1="280" y1="10" x2="280" y2="185" stroke="var(--border)" stroke-width="1" stroke-dasharray="4"/>
+              <text x="420" y="18" font-family="JetBrains Mono,monospace" font-size="12" font-weight="700" fill="#d97706" text-anchor="middle">Inherited ↓</text>
+              <rect x="345" y="30" width="150" height="30" rx="4" fill="var(--code-bg)" stroke="var(--border)" stroke-width="1.5"/>
+              <text x="420" y="49" font-family="JetBrains Mono,monospace" font-size="11" font-weight="700" fill="var(--text)" text-anchor="middle">Parent / Left-sibling</text>
+              <line x1="420" y1="60" x2="420" y2="88" stroke="#d97706" stroke-width="2.5" marker-end="url(#a-dn2)"/>
+              <rect x="340" y="90" width="160" height="30" rx="4" fill="rgba(217,119,6,0.1)" stroke="#d97706" stroke-width="1.5"/>
+              <text x="420" y="109" font-family="JetBrains Mono,monospace" font-size="11" fill="#d97706" text-anchor="middle">Child.inh = parent</text>
+              <text x="420" y="140" font-family="Inter,sans-serif" font-size="11" fill="var(--text-muted)" text-anchor="middle">L.inh = T.type</text>
+              <text x="420" y="158" font-family="Inter,sans-serif" font-size="10" fill="var(--text-muted)" text-anchor="middle">→ L-Attributed, LL parser</text>
+            </svg>
+            <table class="notes-table">
+              <thead><tr><th>Property</th><th>S-Attributed</th><th>L-Attributed</th></tr></thead>
+              <tbody>
+                <tr><td>Attributes</td><td>Synthesized ONLY</td><td>Synth + restricted inherited</td></tr>
+                <tr><td>Info flows</td><td>Bottom-up (child → parent)</td><td>Left-to-right (parent/left → child)</td></tr>
+                <tr><td>Evaluation</td><td>Post-order traversal</td><td>Single L→R pass</td></tr>
+                <tr><td>Parser type</td><td>LR (bottom-up)</td><td>LL (top-down)</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="takeaway"><b>Exam tip:</b> Three guaranteed questions — (1) SLR/LALR table construction, (2) FIRST/FOLLOW computation, (3) synthesized vs inherited attributes. Master these three and Unit 2 is done.</div>
+          <div class="pager" id="pager-notes-unit2"></div>
+        </section>
+
+        <!-- NOTES UNIT 3 -->
+        <section class="page" data-id="notes-unit3">
+          <div class="unit-eyebrow">Unit 3 — Notes</div>
+          <h2 class="unit-title">Type Checking &amp; Runtime Environment</h2>
+          <p class="unit-intro">How the compiler enforces type rules and how memory is organised at runtime.</p>
+          <div class="stat-row">
+            <div class="stat"><div class="stat-val">5</div><div class="stat-label">key topics to know</div></div>
+            <div class="stat"><div class="stat-val">~12%</div><div class="stat-label">exam weight</div></div>
+            <div class="stat"><div class="stat-val">★★☆</div><div class="stat-label">difficulty level</div></div>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Type Checking</div>
+            <ul class="qlist">
+              <li><b>Type checker</b> — semantic analysis phase that verifies type consistency of operations.</li>
+              <li><b>Static type checking</b> — at compile time (C, Java). <b>Dynamic</b> — at runtime (Python).</li>
+              <li><b>Type equivalence</b> — Structural (same shape) vs Name equivalence (same declaration).</li>
+              <li><b>Polymorphism</b> — function works on multiple types. Ad-hoc (overloading), parametric (generics), subtype.</li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Storage Allocation Strategies (high priority)</div>
+            <ul class="qlist">
+              <li><b>Static allocation</b> — memory fixed at compile time. No recursion. e.g. global vars, FORTRAN.</li>
+              <li><b>Stack allocation</b> — activation records pushed/popped on call/return. Supports recursion. LIFO.</li>
+              <li><b>Heap allocation</b> — dynamic memory via malloc/new. Flexible but needs GC or manual free.</li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Activation Record (AR)</div>
+            <ul class="qlist">
+              <li>Contains: return value, actual parameters, control link (caller's AR), access link, saved machine state, local variables, temporaries.</li>
+              <li><b>Control link</b> — points to caller's AR (dynamic chain).</li>
+              <li><b>Access link</b> — points to AR of statically enclosing scope (static chain).</li>
+            </ul>
+          </div>
+          <div class="takeaway"><b>Exam tip:</b> Draw the activation record layout and explain stack vs heap with a diagram. Storage allocation appears in almost every paper it shows up in.</div>
+          <div class="pager" id="pager-notes-unit3"></div>
+        </section>
+
+        <!-- NOTES UNIT 4 -->
+        <section class="page" data-id="notes-unit4">
+          <div class="unit-eyebrow">Unit 4 — Notes</div>
+          <h2 class="unit-title">Code Generation</h2>
+          <p class="unit-intro">Intermediate representations, basic blocks, flow graphs, and DAGs — all practical, all numerical.</p>
+          <div class="stat-row">
+            <div class="stat"><div class="stat-val">8</div><div class="stat-label">key topics to know</div></div>
+            <div class="stat"><div class="stat-val">~25%</div><div class="stat-label">exam weight</div></div>
+            <div class="stat"><div class="stat-val">★★★</div><div class="stat-label">difficulty level</div></div>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Three-Address Code (3AC)</div>
+            <ul class="qlist">
+              <li>At most one operator per instruction. Form: <code>x = y op z</code></li>
+              <li><b>Quadruples</b> — (op, arg1, arg2, result). Easy to reorder; preferred in optimising compilers.</li>
+              <li><b>Triples</b> — (op, arg1, arg2); result implicit as index. Compact but hard to reorder.</li>
+              <li><b>Indirect triples</b> — list of pointers to triples; reordering easier than triples.</li>
+              <li><b>Back patching</b> — filling in incomplete jump targets once the destination is known.</li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Basic Blocks &amp; Flow Graphs</div>
+            <ul class="qlist">
+              <li><b>Basic block</b> — maximal sequence of instructions with one entry, one exit, no internal jumps.</li>
+              <li><b>Leaders</b> — first instruction, any branch target, instruction after a branch.</li>
+              <li><b>Flow graph</b> — directed graph where nodes = basic blocks, edges = control flow.</li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">DAG (Directed Acyclic Graph)</div>
+            <ul class="qlist">
+              <li>Represents computations in a basic block. Leaves = inputs; interior nodes = operators.</li>
+              <li>Detects <b>common sub-expressions</b> automatically (shared nodes).</li>
+              <li>Algorithm: for each instruction x=y op z, find/create nodes for y,z; create node for op; label with x.</li>
+              <li>Applications: CSE elimination, dead code removal, algebraic simplification.</li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Register Allocation &amp; Peephole</div>
+            <ul class="qlist">
+              <li><b>Register allocation</b> — assign variables to registers; use graph colouring (interference graph).</li>
+              <li><b>Peephole optimisation</b> — small sliding window over code; eliminates redundant loads/stores, unreachable code, jumps to jumps.</li>
+            </ul>
+          </div>
+          <div class="takeaway"><b>Exam tip:</b> Practice DAG construction and 3AC generation by hand. Draw the flow graph for while/for loops step by step.</div>
+          <div class="pager" id="pager-notes-unit4"></div>
+        </section>
+
+        <!-- NOTES UNIT 5 -->
+        <section class="page" data-id="notes-unit5">
+          <div class="unit-eyebrow">Unit 5 — Notes</div>
+          <h2 class="unit-title">Code Optimization</h2>
+          <p class="unit-intro">Techniques to improve generated code without changing its meaning — mostly theoretical, high repetition in exams.</p>
+          <div class="stat-row">
+            <div class="stat"><div class="stat-val">6</div><div class="stat-label">key topics to know</div></div>
+            <div class="stat"><div class="stat-val">~12%</div><div class="stat-label">exam weight</div></div>
+            <div class="stat"><div class="stat-val">★★☆</div><div class="stat-label">difficulty level</div></div>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Sources of Optimization (most repeated topic)</div>
+            <ul class="qlist">
+              <li><b>Common Sub-expression Elimination (CSE)</b> — avoid recomputing the same expression.</li>
+              <li><b>Copy Propagation</b> — replace copies (x=y) with the original variable y.</li>
+              <li><b>Dead Code Elimination</b> — remove code whose result is never used.</li>
+              <li><b>Constant Folding</b> — evaluate constant expressions at compile time. e.g. 3+4 → 7</li>
+              <li><b>Strength Reduction</b> — replace expensive op with cheaper one. e.g. x*2 → x+x or x&lt;&lt;1</li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Loop Optimisations</div>
+            <ul class="qlist">
+              <li><b>Loop-invariant code motion</b> — move computations that don't change across iterations outside the loop.</li>
+              <li><b>Induction variable elimination</b> — simplify variables that change by a fixed amount each iteration.</li>
+              <li><b>Loop unrolling</b> — replicate loop body to reduce branch overhead.</li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Three Areas of Optimisation</div>
+            <ul class="qlist">
+              <li><b>Local</b> — within a single basic block. e.g. peephole, CSE in block.</li>
+              <li><b>Global</b> — across basic blocks in a function. Uses data flow analysis.</li>
+              <li><b>Inter-procedural</b> — across function boundaries. Most expensive.</li>
+            </ul>
+          </div>
+          <div class="topic">
+            <div class="topic-title">Global Data Flow Analysis</div>
+            <ul class="qlist">
+              <li>Computes properties of the program at each point using <b>data flow equations</b>.</li>
+              <li><b>Reaching definitions</b> — which assignments can reach a given point.</li>
+              <li><b>Live variable analysis</b> — which variables will be used after this point.</li>
+              <li>Solved iteratively (forward or backward) until a fixed point is reached.</li>
+            </ul>
+          </div>
+          <div class="takeaway"><b>Exam tip:</b> Learn the names and one-line definitions of all sources of optimisation — they appear as "write a short note on" questions almost every year.</div>
+          <div class="pager" id="pager-notes-unit5"></div>
+        </section>
+
+      </div><!-- end content-wrap -->
+    </div><!-- end main -->
+  </div><!-- end flex row -->
+</div><!-- end view-notes -->
+
+<script>
+// ── Theme ──────────────────────────────────────────────────────
+let theme = localStorage.getItem('cd-theme') || 'light';
+function applyTheme(t){
+  document.body.setAttribute('data-theme', t);
+  document.getElementById('landThemeLabel').textContent = t==='light' ? 'Dark mode' : 'Light mode';
+}
+applyTheme(theme);
+document.getElementById('landTheme').addEventListener('click', ()=>{
+  theme = theme==='light' ? 'dark' : 'light';
+  localStorage.setItem('cd-theme', theme);
+  applyTheme(theme);
+});
+
+// ── View switching ─────────────────────────────────────────────
+function goHome(){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-landing').classList.add('active');
+  closeSidebar('pyq'); closeSidebar('notes');
+  window.scrollTo(0,0);
+}
+function openApp(section){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+section).classList.add('active');
+  window.scrollTo(0,0);
+}
+function switchTab(section){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+section).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ── Generic section engine ─────────────────────────────────────
+function makeSection(ns){
+  const order = [ns+'-home',ns+'-unit1',ns+'-unit2',ns+'-unit3',ns+'-unit4',ns+'-unit5'];
+  const titles = {
+    [ns+'-home']:  'home',
+    [ns+'-unit1']: 'Unit 1',
+    [ns+'-unit2']: 'Unit 2',
+    [ns+'-unit3']: 'Unit 3',
+    [ns+'-unit4']: 'Unit 4',
+    [ns+'-unit5']: 'Unit 5'
+  };
+  let current = ns+'-home';
+  const view = document.getElementById('view-'+ns);
+  const pages = view.querySelectorAll('.page');
+  const navItems = view.querySelectorAll('.nav-item');
+  const crumb = document.getElementById('crumb-'+ns);
+  const progress = document.getElementById('progress-'+ns);
+
+  function renderPager(){
+    const idx = order.indexOf(current);
+    // pager inside each unit page
+    const pagerId = 'pager-'+current;
+    const pagerEl = document.getElementById(pagerId);
+    if(!pagerEl) return;
+    let html = '';
+    if(idx > 0){
+      const prev = order[idx-1];
+      html += `<button class="pager-btn prev" data-go="${prev}"><span class="pager-dir mono">← previous</span><span class="pager-name">${titles[prev]}</span></button>`;
+    } else { html += '<div class="pager-spacer"></div>'; }
+    if(idx < order.length-1){
+      const next = order[idx+1];
+      html += `<button class="pager-btn next" data-go="${next}"><span class="pager-dir mono">next →</span><span class="pager-name">${titles[next]}</span></button>`;
+    }
+    pagerEl.innerHTML = html;
+    pagerEl.querySelectorAll('[data-go]').forEach(btn=>{
+      btn.addEventListener('click', ()=> showPage(btn.getAttribute('data-go')));
+    });
+  }
+
+  function showPage(id){
+    current = id;
+    pages.forEach(p => p.classList.toggle('active', p.dataset.id===id));
+    navItems.forEach(n=>{
+      const isActive = n.dataset.page===id;
+      n.classList.toggle('active', isActive);
+      const nIdx = order.indexOf(n.dataset.page);
+      n.classList.toggle('done', nIdx>0 && nIdx < order.indexOf(id));
+    });
+    const label = id.replace(ns+'-','');
+    crumb.innerHTML = `compiler-design / ${ns} / <b>${label}</b>`;
+    const idx = order.indexOf(id);
+    progress.textContent = String(idx).padStart(2,'0')+' / '+String(order.length-1).padStart(2,'0');
+    renderPager();
+    view.querySelector('.content-wrap').scrollIntoView({behavior:'instant',block:'start'});
+    window.scrollTo(0,0);
+    if(window.innerWidth<=760) closeSidebar(ns);
+  }
+
+  navItems.forEach(item=>{
+    item.addEventListener('click', ()=> showPage(item.dataset.page));
+  });
+
+  const startBtn = document.getElementById(ns+'-getStarted');
+  if(startBtn) startBtn.addEventListener('click', ()=> showPage(order[1]));
+
+  // sidebar collapse (desktop)
+  const collapseBtn = document.getElementById('collapseToggle-'+ns);
+  const sidebar = document.getElementById('sidebar-'+ns);
+  if(collapseBtn) collapseBtn.addEventListener('click', ()=> sidebar.classList.toggle('collapsed'));
+
+  // hamburger (mobile)
+  const hamburger = document.getElementById('hamburger-'+ns);
+  const overlay = document.getElementById('overlay');
+  if(hamburger){
+    hamburger.addEventListener('click', ()=>{
+      sidebar.classList.contains('open') ? closeSidebar(ns) : openSidebar(ns);
+    });
+  }
+
+  renderPager();
+}
+
+// ── Sidebar helpers ────────────────────────────────────────────
+const overlay = document.getElementById('overlay');
+function openSidebar(ns){
+  const s = document.getElementById('sidebar-'+ns);
+  if(s){ s.classList.add('open'); overlay.classList.add('active'); document.body.style.overflow='hidden'; }
+}
+function closeSidebar(ns){
+  const s = document.getElementById('sidebar-'+ns);
+  if(s){ s.classList.remove('open'); overlay.classList.remove('active'); document.body.style.overflow=''; }
+}
+overlay.addEventListener('click', ()=>{ closeSidebar('pyq'); closeSidebar('notes'); });
+
+// swipe to close
+['pyq','notes'].forEach(ns=>{
+  const s = document.getElementById('sidebar-'+ns);
+  if(!s) return;
+  let tx=0;
+  s.addEventListener('touchstart', e=>{ tx=e.touches[0].clientX; },{passive:true});
+  s.addEventListener('touchend', e=>{ if(tx - e.changedTouches[0].clientX > 60) closeSidebar(ns); },{passive:true});
+});
+
+// ── Boot ───────────────────────────────────────────────────────
+makeSection('pyq');
+makeSection('notes');
+</script>
+</body>
+</html>
